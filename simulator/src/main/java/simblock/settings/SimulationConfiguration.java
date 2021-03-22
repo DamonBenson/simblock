@@ -21,10 +21,14 @@ package simblock.settings;
  */
 public class SimulationConfiguration {
   /**
+   * Care？
+   */
+  public static final boolean PRINTOUT = false;
+  /**
    * The number of nodes participating in the blockchain network.
    */
   //TODO revert
-  public static final int NUM_OF_NODES = 300;//600;//800;//6000;
+  public static final int NUM_OF_NODES = 10000;//600;//800;//6000;
   // public static final int NUM_OF_NODES = 600;//600;//800;//6000;
 
   /**
@@ -78,7 +82,7 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 3;
+  public static final int END_BLOCK_HEIGHT = 10000;
 
   /**
    * Block size. (unit: byte).
@@ -88,7 +92,7 @@ public class SimulationConfiguration {
   /**
    * The usage rate of compact block relay (CBR) protocol.
    */
-  public static final float CBR_USAGE_RATE = 0.964f;
+  public static final float CBR_USAGE_RATE = 0.75f; // 0.964f
   /**
    * The rate of nodes that cause churn.
    */

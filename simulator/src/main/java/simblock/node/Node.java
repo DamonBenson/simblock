@@ -23,6 +23,7 @@ import static simblock.settings.SimulationConfiguration.CBR_FAILURE_RATE_FOR_CHU
 import static simblock.settings.SimulationConfiguration.CBR_FAILURE_RATE_FOR_CONTROL_NODE;
 import static simblock.settings.SimulationConfiguration.COMPACT_BLOCK_SIZE;
 import static simblock.simulator.Main.OUT_JSON_FILE;
+import static simblock.settings.SimulationConfiguration.PRINTOUT;
 import static simblock.simulator.Network.getBandwidth;
 import static simblock.simulator.Simulator.arriveBlock;
 import static simblock.simulator.Timer.getCurrentTime;
@@ -302,6 +303,8 @@ public class Node {
    * @param newBlock the block to be logged
    */
   private void printAddBlock(Block newBlock) {
+    if(!PRINTOUT)
+      return;
     OUT_JSON_FILE.print("{");
     OUT_JSON_FILE.print("\"kind\":\"add-block\",");
     OUT_JSON_FILE.print("\"content\":{");
