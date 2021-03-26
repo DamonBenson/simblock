@@ -103,6 +103,16 @@ public class Timer {
   }
 
   /**
+   * Empty Task Queue,map
+   */
+  public static void resetTask() {
+    // If there are any tasks
+    taskQueue.clear();
+    taskMap.clear();
+    currentTime = 0L;
+  }
+
+  /**
    * Runs a {@link ScheduledTask}.
    */
   public static void runTask() {

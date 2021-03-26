@@ -24,19 +24,15 @@ import static simblock.settings.SimulationConfiguration.INTERVAL;
 import static simblock.settings.SimulationConfiguration.NUM_OF_NODES;
 import static simblock.settings.SimulationConfiguration.STDEV_OF_MINING_POWER;
 import static simblock.settings.SimulationConfiguration.TABLE;
-
+import static simblock.settings.SimulationConfiguration.VERBOSE;
+import static simblock.settings.SimulationConfiguration.QUIET;
 import static simblock.settings.SimulationConfiguration.CBR_USAGE_RATE;
 import static simblock.settings.SimulationConfiguration.CHURN_NODE_RATE;
 import static simblock.simulator.Network.getDegreeDistribution;
 import static simblock.simulator.Network.getRegionDistribution;
 import static simblock.simulator.Network.printRegion;
-import static simblock.simulator.Simulator.addNode;
-import static simblock.simulator.Simulator.getSimulatedNodes;
-import static simblock.simulator.Simulator.printAllPropagation;
-import static simblock.simulator.Simulator.setTargetInterval;
-import static simblock.simulator.Timer.getCurrentTime;
-import static simblock.simulator.Timer.getTask;
-import static simblock.simulator.Timer.runTask;
+import static simblock.simulator.Simulator.*;
+import static simblock.simulator.Timer.*;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -69,6 +65,20 @@ public class Main {
    * The initial simulation time.
    */
   public static long simulationTime = 0;
+  
+  /**
+   * The initial simulation time.
+   */
+  public static long simulationStamp = 0;
+
+  /**
+   * The initial simulation time.
+   */
+  public static final long TotalSimulationEpoch = 1;
+    /**
+   * The initial simulation time.
+   */
+  public static long SimulationEpoch = 1;
   /**
    * Path to config file.
    */
@@ -109,11 +119,11 @@ public class Main {
   static {
     try {
       OUT_JSON_FILE = new PrintWriter(
-          new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve("./output.json")))));
+          new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
       STATIC_JSON_FILE = new PrintWriter(
-          new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve("./static.json")))));
+          new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
       CUSTOM_TEXT_FILE = new PrintWriter(
-              new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve("./custom.txt")))));
+              new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -127,7 +137,22 @@ public class Main {
   public static void main(String[] args) {
     //float cbr_usage_rate = 0;
     //for(cbr_usage_rate=0; cbr_usage_rate<1.01; cbr_usage_rate = (float) (cbr_usage_rate+0.25)) {
-      final long start = System.currentTimeMillis();
+      while(SimulationEpoch <= TotalSimulationEpoch){
+      long start = System.currentTimeMillis();
+      long startStamp = getCurrentTime();
+      System.out.println("The " + SimulationEpoch + " Epoch finished,start timestamp:"+startStamp);
+
+      try {
+        OUT_JSON_FILE = new PrintWriter(
+            new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
+        STATIC_JSON_FILE = new PrintWriter(
+            new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
+        CUSTOM_TEXT_FILE = new PrintWriter(
+                new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
       setTargetInterval(INTERVAL);
 
       //start json format
@@ -153,8 +178,15 @@ public class Main {
           if (currentBlockHeight > END_BLOCK_HEIGHT) {
             break;
           }
-          // Log every 100 blocks and at the second block
+          // |Log| every 100 blocks and at the second block
           // TODO use constants here
+          if (QUIET){
+            continue;
+          }
+
+          if (VERBOSE){
+            System.out.println(currentBlockHeight);
+          }
           if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
             writeGraph(currentBlockHeight);
             System.out.println(currentBlockHeight);
@@ -164,8 +196,7 @@ public class Main {
         runTask();
       }
 
-      // Print propagation information about all blocks
-      // printAllPropagation();
+
 
       //TODO logger
       System.out.println();
@@ -195,6 +226,8 @@ public class Main {
       // Record orphans to the list of all known blocks
       blocks.addAll(orphans);
 
+
+
       ArrayList<Block> blockList = new ArrayList<>(blocks);
 
       //Sort the blocks first by time, then by hash code
@@ -221,23 +254,26 @@ public class Main {
       }
       //System.out.println(averageOrphansSize);
 
-    /*
-    Log in format:
-     ＜fork_information, block height, block ID＞
-    fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
-    "Orphan" denote block is an orphan block.
-     */
+      //Log all Fork
+
+
+      /*
+      Log in format:
+      ＜fork_information, block height, block ID＞
+      fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
+      "Orphan" denote block is an orphan block.
+      */
       // TODO move to method and use logger
       try {
 
-        FileWriter fw = new FileWriter(new File(OUT_FILE_URI.resolve("./blockList.txt")), false);
+        FileWriter fw = new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./blockList%d.txt",SimulationEpoch))), false);
         PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
 
         for (Block b : blockList) {
           if (!orphans.contains(b)) {
-            pw.println("OnChain : " + b.getHeight() + " : " + b);
+            pw.println("OnChain : " + b.getHeight() + " |Identity: " + b + "|PropagationTime: " + (b.propagationFinished - b.getTime()));
           } else {
-            pw.println("Orphan : " + b.getHeight() + " : " + b);
+            pw.println("Orphan : " + b.getHeight() + " |Identity: " + b + "|CompeteTime: " + (b.propagationFinished - b.getTime()));
           }
         }
         pw.close();
@@ -246,6 +282,14 @@ public class Main {
         ex.printStackTrace();
       }
 
+      // Print propagation information about all blocks
+      printAllPropagation(blockList, orphans);
+
+      long end = System.currentTimeMillis();
+      long endStamp = getCurrentTime();
+
+      simulationTime = end - start;
+      simulationStamp = endStamp - startStamp;
       OUT_JSON_FILE.print("{");
       OUT_JSON_FILE.print("\"kind\":\"simulation-end\",");
       OUT_JSON_FILE.print("\"content\":{");
@@ -265,22 +309,30 @@ public class Main {
       CUSTOM_TEXT_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
       CUSTOM_TEXT_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
       CUSTOM_TEXT_FILE.print("\"timestamp\":" + getCurrentTime());
+      CUSTOM_TEXT_FILE.print("\"simulationStamp\":" + simulationStamp);
       CUSTOM_TEXT_FILE.print("}");
       CUSTOM_TEXT_FILE.print("}");
       //end json format
       CUSTOM_TEXT_FILE.print("]");
       CUSTOM_TEXT_FILE.close();
 
-
-      long end = System.currentTimeMillis();
-      simulationTime += end - start;
       // Log simulation time in milliseconds
       System.out.println(simulationTime);
       System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
       System.out.println("\"totalOrphansSize\":" + totalOrphansSize);
       System.out.println("\"totalOrphansNum\":" + totalOrphansNum);
       System.out.println("\"timestamp\":" + getCurrentTime());
+      System.out.println("\"simulationStamp\":" + simulationStamp);
+      System.out.println("The " + SimulationEpoch + " Epoch finished,end timeStamp:" + endStamp
+              + " simulation Stamp:" + simulationStamp
+                        + " simulation Minutes:" + simulationStamp/(1000*60));
 
+      resetTask();
+      clearNode();//For multiEpoch
+      SimulationEpoch ++;
+
+
+      }
 
   }
 
@@ -379,7 +431,7 @@ public class Main {
     List<Boolean> useCBRNodes = makeRandomList(CBR_USAGE_RATE);
 
     // List of churn nodes.
-		List<Boolean> churnNodes = makeRandomList(CHURN_NODE_RATE);
+    List<Boolean> churnNodes = makeRandomList(CHURN_NODE_RATE);
 
     for (int id = 1; id <= numNodes; id++) {
       // Each node gets assigned a region, its degree, mining power, routing table and

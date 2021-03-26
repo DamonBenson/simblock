@@ -66,6 +66,7 @@ public class BlockMessageTask extends AbstractMessageTask {
   public void run() {
 
     this.getFrom().sendNextBlockMessage();
+    this.block.propagationFinished = getCurrentTime();
     if(PRINTOUT) {
       OUT_JSON_FILE.print("{");
       OUT_JSON_FILE.print("\"kind\":\"flow-block\",");

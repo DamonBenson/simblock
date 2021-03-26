@@ -18,9 +18,12 @@ package simblock.simulator;
 
 import static simblock.simulator.Timer.getCurrentTime;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+
 import simblock.block.Block;
 import simblock.node.Node;
 
@@ -40,6 +43,7 @@ public class Simulator {
    * The target block interval in milliseconds.
    */
   private static long targetInterval;
+
 
   /**
    * Get simulated nodes list.
@@ -82,9 +86,18 @@ public class Simulator {
    *
    * @param node the node
    */
-  @SuppressWarnings("unused")
   public static void removeNode(Node node) {
     simulatedNodes.remove(node);
+  }
+
+  /**
+   * Clear node from the list of simulated nodes.
+   *
+   *
+   */
+  public static void clearNode() {
+    while(simulatedNodes.size() != 0)
+      simulatedNodes.remove(0);
   }
 
   /**
@@ -118,7 +131,7 @@ public class Simulator {
   private static final ArrayList<LinkedHashMap<Integer, Long>> observedPropagations =
       new ArrayList<>();
 
-  /**
+/**
    * Handle the arrival of a new block. For every observed block, propagation information is
    * updated, and for a new
    * block propagation information is created.
@@ -127,6 +140,8 @@ public class Simulator {
    * @param node  the node
    */
   public static void arriveBlock(Block block, Node node) {
+    // 记录区块抵达节点的传播时间
+
     // If block is already seen by any node
     if (observedBlocks.contains(block)) {
       // Get the propagation information for the current block
@@ -136,21 +151,23 @@ public class Simulator {
       // Update information for the new block
       propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
     } else {
-      // If the block has not been seen by any node and there is no memory allocated
-      //TODO move magic number to constant
-      if (observedBlocks.size() > 10) {
-        // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
-        // printPropagation(observedBlocks.get(0), observedPropagations.get(0));
-        observedBlocks.remove(0);
-        observedPropagations.remove(0);
-      }
+      // If the block has not been seen by any node and there is ||no memory|| allocated
+      // TODO move magic number to constant
+      // if (observedBlocks.size() > 10) {
+      //   // 
+      //   // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
+      //   printPropagation(observedBlocks.get(0), observedPropagations.get(0));
+      //   observedBlocks.remove(0);
+      //   observedPropagations.remove(0);
+      // }
       // If the block has not been seen by any node and there is additional memory
       LinkedHashMap<Integer, Long> propagation = new LinkedHashMap<>();
+      // propagation   (节点ID，该节点收到该区块的时间：区别于接受区块)
       propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
       // Record the block as seen
       observedBlocks.add(block);
       // Record the propagation time
-      observedPropagations.add(propagation);
+      observedPropagations.add(propagation);//propagation 存在该结构中，索引为区块对象地址
     }
   }
 
@@ -181,9 +198,19 @@ public class Simulator {
    * Print propagation information about all blocks, internally relying on
    * {@link Simulator#printPropagation(Block, LinkedHashMap)}.
    */
-  public static void printAllPropagation() {
-    for (int i = 0; i < observedBlocks.size(); i++) {
-      printPropagation(observedBlocks.get(i), observedPropagations.get(i));
+  public static void printAllPropagation(ArrayList<Block> blockList, Set<Block> orphans) {
+    for (Block b : blockList) {
+        if (!orphans.contains(b)) {
+          System.out.println("onchain");
+          printPropagation(b, observedPropagations.get(observedBlocks.indexOf(b)));
+        } else {
+          System.out.println("orphan");
+          printPropagation(b, observedPropagations.get(observedBlocks.indexOf(b)));
+        }
     }
+
+//    for (int i = 0; i < observedBlocks.size(); i++) {
+//      printPropagation(observedBlocks.get(i), observedPropagations.get(i));
+//    }
   }
 }

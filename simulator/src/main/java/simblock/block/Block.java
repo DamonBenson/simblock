@@ -43,6 +43,11 @@ public class Block {
   private final long time;
 
   /**
+   * The target block propagation finished time in milliseconds.
+   */
+  public long propagationFinished;
+
+  /**
    * Block unique id.
    */
   private final int id;
@@ -64,6 +69,8 @@ public class Block {
     this.parent = parent;
     this.minter = minter;
     this.time = time;
+    this.propagationFinished = time;
+
     this.id = latestId;
     latestId++;
   }
