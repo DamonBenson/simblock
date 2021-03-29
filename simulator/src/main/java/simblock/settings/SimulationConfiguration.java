@@ -32,7 +32,7 @@ public class SimulationConfiguration {
    * The number of nodes participating in the blockchain network.
    */
   //TODO revert
-  public static final int NUM_OF_NODES = 10;//00;//600;//800;//6000;
+  public static final int NUM_OF_NODES = 10000;//00;//600;//800;//6000;
   // public static final int NUM_OF_NODES = 600;//600;//800;//6000;
 
   /**
@@ -40,7 +40,7 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 100;//00;
+  public static final int END_BLOCK_HEIGHT = 10000;//00;
   //10k 10000
 
   /**
@@ -53,7 +53,7 @@ public class SimulationConfiguration {
    * The expected value of block generation interval. The difficulty of mining is automatically
    * adjusted by this value and the sum of mining power. (unit: millisecond)
    */
-  public static final long INTERVAL = 1000 * 60 * 10;//1000*60;//1000*30*5;//1000*60*10;
+  public static final long INTERVAL = 1000 * 60 *10 ;//1000*60;//1000*30*5;//1000*60*10;
 
   /**
    * The kind of routing table.
@@ -98,7 +98,7 @@ public class SimulationConfiguration {
   /**
    * The usage rate of compact block relay (CBR) protocol.
    */
-  public static final float CBR_USAGE_RATE = 0.0f; // 0.964f
+  public static final float CBR_USAGE_RATE = 1.0f; // 0.964f
   /**
    * The rate of nodes that cause churn.
    */
