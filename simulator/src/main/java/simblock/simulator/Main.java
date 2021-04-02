@@ -31,6 +31,7 @@ import static simblock.settings.SimulationConfiguration.CHURN_NODE_RATE;
 import static simblock.simulator.Network.getDegreeDistribution;
 import static simblock.simulator.Network.getRegionDistribution;
 import static simblock.simulator.Network.printRegion;
+import static simblock.simulator.SimulateRandomEvent.processingTimeExtra;
 import static simblock.simulator.Simulator.*;
 import static simblock.simulator.Timer.*;
 
@@ -74,7 +75,7 @@ public class Main {
   /**
    * The initial simulation time.
    */
-  public static final long TotalSimulationEpoch = 2;
+  public static final long TotalSimulationEpoch = 1;
     /**
    * The initial simulation time.
    */
@@ -92,7 +93,7 @@ public class Main {
     try {
       //CONF_FILE_URI = ClassLoader.getSystemResource("simulator.conf").toURI();
       //OUT_FILE_URI = CONF_FILE_URI.resolve(new URI("../output/"));
-      OUT_FILE_URI = new URI("file:/E:/InputFile/GitBase/Simblock@Bernard/simulator/src/dist/output");
+      OUT_FILE_URI = new URI("file:/E:/InputFile/GitBase/Simblock/simulator/src/dist/output");// 只需要改好这个路径，就能得到设定的输出
     } catch (URISyntaxException e) {
       e.printStackTrace();
     }
@@ -135,205 +136,192 @@ public class Main {
    * @param args the input arguments
    */
   public static void main(String[] args) {
-    //float cbr_usage_rate = 0;
-    //for(cbr_usage_rate=0; cbr_usage_rate<1.01; cbr_usage_rate = (float) (cbr_usage_rate+0.25)) {
       while(SimulationEpoch <= TotalSimulationEpoch){
-      long start = System.currentTimeMillis();
-      long startStamp = getCurrentTime();
-      System.out.println("The " + SimulationEpoch + " Epoch finished,start timestamp:"+startStamp);
+          long start = System.currentTimeMillis();
+          long startStamp = getCurrentTime();
+          System.out.println("The " + SimulationEpoch + " Epoch finished,start timestamp:"+startStamp);
 
-      try {
-        OUT_JSON_FILE = new PrintWriter(
-            new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
-        STATIC_JSON_FILE = new PrintWriter(
-            new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
-        CUSTOM_TEXT_FILE = new PrintWriter(
-                new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-
-      setTargetInterval(INTERVAL);
-
-      //start json format
-      OUT_JSON_FILE.print("[");
-      OUT_JSON_FILE.flush();
-
-      // Log regions
-      printRegion();
-
-      // Setup network
-      constructNetworkWithAllNodes(NUM_OF_NODES);
-
-      // Initial block height, we stop at END_BLOCK_HEIGHT
-      int currentBlockHeight = 1;
-
-      // Iterate over tasks and handle
-      while (getTask() != null) {
-        if (getTask() instanceof AbstractMintingTask) {
-          AbstractMintingTask task = (AbstractMintingTask) getTask();
-          if (task.getParent().getHeight() == currentBlockHeight) {
-            currentBlockHeight++;
-          }
-          if (currentBlockHeight > END_BLOCK_HEIGHT) {
-            break;
-          }
-          // |Log| every 100 blocks and at the second block
-          // TODO use constants here
-          if (QUIET){
-            continue;
+          try {
+            OUT_JSON_FILE = new PrintWriter(
+                new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
+            STATIC_JSON_FILE = new PrintWriter(
+                new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
+            CUSTOM_TEXT_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
+          } catch (IOException e) {
+            e.printStackTrace();
           }
 
-          if (VERBOSE){
-            System.out.println(currentBlockHeight);
+          setTargetInterval(INTERVAL);
+
+          //start json format
+          OUT_JSON_FILE.print("[");
+          OUT_JSON_FILE.flush();
+
+          // Log regions
+          printRegion();
+
+          // Setup network
+          constructNetworkWithAllNodes(NUM_OF_NODES);
+
+          // Initial block height, we stop at END_BLOCK_HEIGHT
+          int currentBlockHeight = 1;
+
+          // Iterate over tasks and handle
+          while (getTask() != null) {
+            if (getTask() instanceof AbstractMintingTask) {
+              AbstractMintingTask task = (AbstractMintingTask) getTask();
+              if (task.getParent().getHeight() == currentBlockHeight) {
+                currentBlockHeight++;
+              }
+              if (currentBlockHeight > END_BLOCK_HEIGHT) {
+                break;
+              }
+              // |Log| every 100 blocks and at the second block
+              // TODO use constants here
+              if (QUIET){
+                continue;
+              }
+
+              if (VERBOSE){
+                System.out.println(currentBlockHeight);
+              }
+              if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
+                writeGraph(currentBlockHeight);
+                System.out.println(currentBlockHeight);
+              }
+            }
+            // Execute task
+            runTask();
           }
-          if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
-            writeGraph(currentBlockHeight);
-            System.out.println(currentBlockHeight);
+
+          //TODO logger
+          System.out.println();
+
+          Set<Block> blocks = new HashSet<>();
+
+          // Get the latest block from the first simulated node
+          Block block = getSimulatedNodes().get(0).getBlock();
+
+          //Update the list of known blocks by adding the parents of the aforementioned block
+          while (block.getParent() != null) {
+            blocks.add(block);
+            block = block.getParent();
           }
-        }
-        // Execute task
-        runTask();
-      }
 
-
-
-      //TODO logger
-      System.out.println();
-
-      Set<Block> blocks = new HashSet<>();
-
-      // Get the latest block from the first simulated node
-      Block block = getSimulatedNodes().get(0).getBlock();
-
-      //Update the list of known blocks by adding the parents of the aforementioned block
-      while (block.getParent() != null) {
-        blocks.add(block);
-        block = block.getParent();
-      }
-
-      Set<Block> orphans = new HashSet<>();
-      float averageOrphansSize = 0;
-      int totalOrphansSize = 0;
-      int totalOrphansNum = 0;
-      // Gather all known orphans
-      for (Node node : getSimulatedNodes()) {
-        orphans.addAll(node.getOrphans());
-        totalOrphansSize += node.getOrphans().size();
-      }
-      averageOrphansSize = (float)totalOrphansSize / getSimulatedNodes().size();
-
-      // Record orphans to the list of all known blocks
-      blocks.addAll(orphans);
-
-
-
-      ArrayList<Block> blockList = new ArrayList<>(blocks);
-
-      //Sort the blocks first by time, then by hash code
-      blockList.sort((a, b) -> {
-        int order = Long.signum(a.getTime() - b.getTime());
-        if (order != 0) {
-          return order;
-        }
-        order = System.identityHashCode(a) - System.identityHashCode(b);
-        return order;
-      });
-
-      //Log all orphans
-      // TODO move to method and use logger
-      for (Block orphan : orphans) {
-        //System.out.println(orphan + ":" + orphan.getHeight());
-        totalOrphansNum += 1;
-        try {
-          CUSTOM_TEXT_FILE.print(orphan + "|Height:" + orphan.getHeight() + "|Minter:" + orphan.getMinter() + '\n');
-          CUSTOM_TEXT_FILE.flush();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      }
-      //System.out.println(averageOrphansSize);
-
-      //Log all Fork
-
-
-      /*
-      Log in format:
-      ＜fork_information, block height, block ID＞
-      fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
-      "Orphan" denote block is an orphan block.
-      */
-      // TODO move to method and use logger
-      try {
-
-        FileWriter fw = new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./blockList%d.txt",SimulationEpoch))), false);
-        PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
-
-        for (Block b : blockList) {
-          if (!orphans.contains(b)) {
-            pw.println("OnChain : " + b.getHeight() + " |Identity: " + b + "|PropagationTime: " + (b.propagationFinished - b.getTime()));
-          } else {
-            pw.println("Orphan : " + b.getHeight() + " |Identity: " + b + "|CompeteTime: " + (b.propagationFinished - b.getTime()));
+          Set<Block> orphans = new HashSet<>();
+          float averageOrphansSize = 0;
+          int totalOrphansSize = 0;
+          int totalOrphansNum = 0;
+          // Gather all known orphans
+          for (Node node : getSimulatedNodes()) {
+            orphans.addAll(node.getOrphans());
+            totalOrphansSize += node.getOrphans().size();
           }
-        }
-        pw.close();
+          averageOrphansSize = (float)totalOrphansSize / getSimulatedNodes().size();
 
-      } catch (IOException ex) {
-        ex.printStackTrace();
+          // Record orphans to the list of all known blocks
+          blocks.addAll(orphans);
+
+          ArrayList<Block> blockList = new ArrayList<>(blocks);
+
+          //Sort the blocks first by time, then by hash code
+          blockList.sort((a, b) -> {
+            int order = Long.signum(a.getTime() - b.getTime());
+            if (order != 0) {
+              return order;
+            }
+            order = System.identityHashCode(a) - System.identityHashCode(b);
+            return order;
+          });
+
+          //Log all orphans
+          // TODO move to method and use logger
+          for (Block orphan : orphans) {
+            totalOrphansNum += 1;
+            try {
+              CUSTOM_TEXT_FILE.print(orphan + "|Height:" + orphan.getHeight() + "|Minter:" + orphan.getMinter() + '\n');
+              CUSTOM_TEXT_FILE.flush();
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+          }
+
+          //Log all Fork
+          /*
+          Log in format:
+          ＜fork_information, block height, block ID＞
+          fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
+          "Orphan" denote block is an orphan block.
+          */
+          // TODO move to method and use logger
+          try {
+
+            FileWriter fw = new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./blockList%d.txt",SimulationEpoch))), false);
+            PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
+
+            for (Block b : blockList) {
+              if (!orphans.contains(b)) {
+                pw.println("OnChain : " + b.getHeight() + " |Identity: " + b + "|PropagationTime: " + (b.propagationFinished - b.getTime()));
+              } else {
+                pw.println("Orphan : " + b.getHeight() + " |Identity: " + b + "|CompeteTime: " + (b.propagationFinished - b.getTime()));
+              }
+            }
+            pw.close();
+
+          } catch (IOException ex) {
+            ex.printStackTrace();
+          }
+
+          // Print propagation information about all blocks
+          // printAllPropagation(blockList, orphans);
+
+          long end = System.currentTimeMillis();
+          long endStamp = getCurrentTime();
+          simulationTime = end - start;
+          simulationStamp = endStamp - startStamp;
+
+          // log
+          OUT_JSON_FILE.print("{");
+          OUT_JSON_FILE.print("\"kind\":\"simulation-end\",");
+          OUT_JSON_FILE.print("\"content\":{");
+          OUT_JSON_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
+          OUT_JSON_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
+          OUT_JSON_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
+          OUT_JSON_FILE.print("\"timestamp\":" + getCurrentTime());
+          OUT_JSON_FILE.print("}");
+          OUT_JSON_FILE.print("}");
+          OUT_JSON_FILE.print("]");
+          OUT_JSON_FILE.close();
+          // end json format
+          CUSTOM_TEXT_FILE.print("{");
+          CUSTOM_TEXT_FILE.print("\"kind\":\"simulation-end\",");
+          CUSTOM_TEXT_FILE.print("\"content\":{");
+          CUSTOM_TEXT_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
+          CUSTOM_TEXT_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
+          CUSTOM_TEXT_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
+          CUSTOM_TEXT_FILE.print("\"timestamp\":" + getCurrentTime());
+          CUSTOM_TEXT_FILE.print("\"simulationStamp\":" + simulationStamp);
+          CUSTOM_TEXT_FILE.print("}");
+          CUSTOM_TEXT_FILE.print("}");
+          CUSTOM_TEXT_FILE.print("]");
+          CUSTOM_TEXT_FILE.close();
+          // end json format
+          // Log simulation time in milliseconds
+          System.out.println(simulationTime);
+          System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
+          System.out.println("\"totalOrphansSize\":" + totalOrphansSize);
+          System.out.println("\"totalOrphansNum\":" + totalOrphansNum);
+          System.out.println("\"timestamp\":" + getCurrentTime());
+          System.out.println("\"simulationStamp\":" + simulationStamp);
+          System.out.println("The " + SimulationEpoch + " Epoch finished,simulation Time:" + (simulationTime/1000)
+                                          + " simulation Stamp:" + simulationStamp
+                                                    + " simulation Stamp Minutes:" + simulationStamp/(1000*60));
+          resetTask();
+          clearNode();//For multiEpoch
+          SimulationEpoch ++;
+
       }
-
-      // Print propagation information about all blocks
-      printAllPropagation(blockList, orphans);
-
-      long end = System.currentTimeMillis();
-      long endStamp = getCurrentTime();
-
-      simulationTime = end - start;
-      simulationStamp = endStamp - startStamp;
-      OUT_JSON_FILE.print("{");
-      OUT_JSON_FILE.print("\"kind\":\"simulation-end\",");
-      OUT_JSON_FILE.print("\"content\":{");
-      OUT_JSON_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
-      OUT_JSON_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
-      OUT_JSON_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
-      OUT_JSON_FILE.print("\"timestamp\":" + getCurrentTime());
-      OUT_JSON_FILE.print("}");
-      OUT_JSON_FILE.print("}");
-      //end json format
-      OUT_JSON_FILE.print("]");
-      OUT_JSON_FILE.close();
-      CUSTOM_TEXT_FILE.print("{");
-      CUSTOM_TEXT_FILE.print("\"kind\":\"simulation-end\",");
-      CUSTOM_TEXT_FILE.print("\"content\":{");
-      CUSTOM_TEXT_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
-      CUSTOM_TEXT_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
-      CUSTOM_TEXT_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
-      CUSTOM_TEXT_FILE.print("\"timestamp\":" + getCurrentTime());
-      CUSTOM_TEXT_FILE.print("\"simulationStamp\":" + simulationStamp);
-      CUSTOM_TEXT_FILE.print("}");
-      CUSTOM_TEXT_FILE.print("}");
-      //end json format
-      CUSTOM_TEXT_FILE.print("]");
-      CUSTOM_TEXT_FILE.close();
-
-      // Log simulation time in milliseconds
-      System.out.println(simulationTime);
-      System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
-      System.out.println("\"totalOrphansSize\":" + totalOrphansSize);
-      System.out.println("\"totalOrphansNum\":" + totalOrphansNum);
-      System.out.println("\"timestamp\":" + getCurrentTime());
-      System.out.println("\"simulationStamp\":" + simulationStamp);
-      System.out.println("The " + SimulationEpoch + " Epoch finished,end timeStamp:" + endStamp
-              + " simulation Stamp:" + simulationStamp
-                        + " simulation Minutes:" + simulationStamp/(1000*60));
-
-      resetTask();
-      clearNode();//For multiEpoch
-      SimulationEpoch ++;
-
-
-      }
-
   }
 
 

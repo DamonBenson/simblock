@@ -25,6 +25,7 @@ import static simblock.settings.SimulationConfiguration.COMPACT_BLOCK_SIZE;
 import static simblock.simulator.Main.OUT_JSON_FILE;
 import static simblock.settings.SimulationConfiguration.PRINTADDBLOCK;
 import static simblock.simulator.Network.getBandwidth;
+import static simblock.simulator.SimulateRandomEvent.processingTimeExtra;
 import static simblock.simulator.Simulator.arriveBlock;
 import static simblock.simulator.Timer.getCurrentTime;
 import static simblock.simulator.Timer.putTask;
@@ -62,13 +63,30 @@ public class Node {
 
   /**
    * Mining power assigned to the node.
+   * Which can Boost by the time minted.
    */
-  private final long miningPower;
+  private long miningPower;
 
   /**
    * Mining power waste in compete.
    */
-  private long miningPower_Waste;
+  // TODO verify
+  private long miningPowerWaste;
+
+  /**
+   * Coin that the Node has been rewarded.
+   */
+  // TODO verify
+  private float balance;
+
+  /**
+   * currentNetConnection, when currentNetConnection boost
+   * local host may get overwhelmed
+   */
+  // TODO verify
+  private int currentNetConnection;
+
+
 
   /**
    * A nodes routing table.
@@ -82,13 +100,15 @@ public class Node {
 
   /**
    * Whether the node uses compact block relay.
+   * Mind can't Change
    */
-  private boolean useCBR;
+  private final boolean useCBR;
 
   /**
    * The node causes churn.
+   * Mind can't Change
    */
-  private boolean isChurnNode;
+  private final boolean isChurnNode;
 
   /**
    * The current block.
@@ -118,7 +138,10 @@ public class Node {
 
   /**
    * Processing time of tasks expressed in milliseconds.
+   * average ,while in simulation ,processed error will consume more time.
+   * 3、4 in local busy, rand(300) when network busy ,30000 in crashed.
    */
+  // TODO verify
   private final long processingTime = 2;
 
   /**
@@ -142,6 +165,8 @@ public class Node {
     this.miningPower = miningPower;
     this.useCBR = useCBR;
     this.isChurnNode = isChurnNode;
+    this.balance = 0;
+    this.miningPowerWaste = 0;
 
     try {
       this.routingTable = (AbstractRoutingTable) Class.forName(routingTableName).getConstructor(
@@ -177,9 +202,23 @@ public class Node {
    *
    * @return the mining power
    */
-  public long getMiningPower() {
-    return this.miningPower;
+  public long getMiningPower() { return this.miningPower; }
+
+  /**
+   * Gets mining power.
+   *
+   * @return the mining power that waste in compete
+   */
+  public long getMiningPowerWaste() {
+    return this.miningPowerWaste;
   }
+
+  /**
+   * Gets mining power.
+   *
+   * @return the balance
+   */
+  public float getBalance() { return this.balance; }
 
   /**
    * Gets the consensus algorithm.
@@ -482,19 +521,19 @@ public class Node {
         if(this.messageQue.get(0).getFrom().useCBR && this.useCBR) {
           // Convert bytes to bits and divide by the bandwidth expressed as bit per millisecond, add
           // processing time.
-          long delay = COMPACT_BLOCK_SIZE * 8 / (bandwidth / 1000) + processingTime;
+          long delay = COMPACT_BLOCK_SIZE * 8 / (bandwidth / 1000) + processingTimeExtra(processingTime, -1);
 
           // Send compact block message.
           messageTask = new CmpctBlockMessageTask(this, to, block, delay);
         } else {
           // Else use lagacy protocol.
-          long delay = BLOCK_SIZE * 8 / (bandwidth / 1000) + processingTime;
+          long delay = BLOCK_SIZE * 8 / (bandwidth / 1000) + processingTimeExtra(processingTime, -1);
           messageTask = new BlockMessageTask(this, to, block, delay);
         }
       } else if(this.messageQue.get(0) instanceof GetBlockTxnMessageTask) {
         // Else from requests missing transactions.
         Block block = ((GetBlockTxnMessageTask) this.messageQue.get(0)).getBlock();
-        long delay = getFailedBlockSize() * 8 / (bandwidth / 1000) + processingTime;
+        long delay = getFailedBlockSize() * 8 / (bandwidth / 1000) + processingTimeExtra(processingTime, -1);
         messageTask = new BlockMessageTask(this, to, block, delay);
       } else {
         throw new UnsupportedOperationException();

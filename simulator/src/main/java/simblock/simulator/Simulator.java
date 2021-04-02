@@ -16,6 +16,7 @@
 
 package simblock.simulator;
 
+import static simblock.settings.SimulationConfiguration.MEMORYSAVEMODE;
 import static simblock.simulator.Timer.getCurrentTime;
 
 import java.io.*;
@@ -153,13 +154,13 @@ public class Simulator {
     } else {
       // If the block has not been seen by any node and there is ||no memory|| allocated
       // TODO move magic number to constant
-      // if (observedBlocks.size() > 10) {
-      //   // 
-      //   // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
-      //   printPropagation(observedBlocks.get(0), observedPropagations.get(0));
-      //   observedBlocks.remove(0);
-      //   observedPropagations.remove(0);
-      // }
+       if ((MEMORYSAVEMODE)&(observedBlocks.size() > 10)) {
+         //
+         // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
+         printPropagation(observedBlocks.get(0), observedPropagations.get(0));
+         observedBlocks.remove(0);
+         observedPropagations.remove(0);
+       }
       // If the block has not been seen by any node and there is additional memory
       LinkedHashMap<Integer, Long> propagation = new LinkedHashMap<>();
       // propagation   (节点ID，该节点收到该区块的时间：区别于接受区块)

@@ -21,12 +21,18 @@ package simblock.settings;
  */
 public class SimulationConfiguration {
   /**
-   * Care？
+   * PRINTOUT       Maybe flow-block
+   * PRINTADDBLOCK  add-block  node's add-block event.Not for Network
+   * VERBOSE        every addOnChain tell in console
+   * QUIET          margin of console.log come into quiet
+   * MEMORYSAVEMODE maybe some memorysave operation
    */
-  public static final boolean PRINTOUT = false;//Maybe flow-block
-  public static final boolean PRINTADDBLOCK = false;//Maybe add-block  node's add-block event.Not for Network
+  public static final boolean PRINTOUT = false;
+  public static final boolean PRINTADDBLOCK = false;
   public static final boolean VERBOSE = true;
   public static final boolean QUIET = false;
+  public static final boolean MEMORYSAVEMODE = false;
+  public static final boolean NOEXTRA = false;
 
   /**
    * The number of nodes participating in the blockchain network.
@@ -106,8 +112,8 @@ public class SimulationConfiguration {
   /**
    * Compact block size. (unit: byte)
    */
-	public static final long COMPACT_BLOCK_SIZE = 18 * 1000; // 18KB
-	/**
+  public static final long COMPACT_BLOCK_SIZE = 18 * 1000; // 18KB
+  /**
    * CBR failure rate for a node that always connect network.
    */
   public static final float CBR_FAILURE_RATE_FOR_CONTROL_NODE = 0.13f;
