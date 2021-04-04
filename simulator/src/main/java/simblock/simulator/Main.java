@@ -17,21 +17,10 @@
 package simblock.simulator;
 
 
-import static simblock.settings.SimulationConfiguration.ALGO;
-import static simblock.settings.SimulationConfiguration.AVERAGE_MINING_POWER;
-import static simblock.settings.SimulationConfiguration.END_BLOCK_HEIGHT;
-import static simblock.settings.SimulationConfiguration.INTERVAL;
-import static simblock.settings.SimulationConfiguration.NUM_OF_NODES;
-import static simblock.settings.SimulationConfiguration.STDEV_OF_MINING_POWER;
-import static simblock.settings.SimulationConfiguration.TABLE;
-import static simblock.settings.SimulationConfiguration.VERBOSE;
-import static simblock.settings.SimulationConfiguration.QUIET;
-import static simblock.settings.SimulationConfiguration.CBR_USAGE_RATE;
-import static simblock.settings.SimulationConfiguration.CHURN_NODE_RATE;
+import static simblock.settings.SimulationConfiguration.*;
 import static simblock.simulator.Network.getDegreeDistribution;
 import static simblock.simulator.Network.getRegionDistribution;
 import static simblock.simulator.Network.printRegion;
-import static simblock.simulator.SimulateRandomEvent.processingTimeExtra;
 import static simblock.simulator.Simulator.*;
 import static simblock.simulator.Timer.*;
 
@@ -76,14 +65,14 @@ public class Main {
    * The initial simulation time.
    */
   public static final long TotalSimulationEpoch = 1;
-    /**
+  /**
    * The initial simulation time.
    */
   public static long SimulationEpoch = 1;
   /**
    * Path to config file.
    */
-  public static URI CONF_FILE_URI;
+  // public static URI CONF_FILE_URI;
   /**
    * Output path.
    */
@@ -117,18 +106,13 @@ public class Main {
   //TODO use logger
   public static PrintWriter CUSTOM_TEXT_FILE;
 
-  static {
-    try {
-      OUT_JSON_FILE = new PrintWriter(
-          new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
-      STATIC_JSON_FILE = new PrintWriter(
-          new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
-      CUSTOM_TEXT_FILE = new PrintWriter(
-              new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
+  /**
+   * The constant STATIC_JSON_FILE.
+   */
+  //TODO use logger
+  public static PrintWriter PROPAGATION_TEXT_FILE;
+
+
 
   /**
    * The entry point.
@@ -148,10 +132,12 @@ public class Main {
                 new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
             CUSTOM_TEXT_FILE = new PrintWriter(
                     new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
+            PROPAGATION_TEXT_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./propagation%d.txt",SimulationEpoch))))));
           } catch (IOException e) {
             e.printStackTrace();
           }
-
+          printNetProtocolSetting();
           setTargetInterval(INTERVAL);
 
           //start json format
@@ -274,7 +260,7 @@ public class Main {
           }
 
           // Print propagation information about all blocks
-          // printAllPropagation(blockList, orphans);
+//           printAllPropagation(blockList, orphans);
 
           long end = System.currentTimeMillis();
           long endStamp = getCurrentTime();
@@ -306,6 +292,7 @@ public class Main {
           CUSTOM_TEXT_FILE.print("}");
           CUSTOM_TEXT_FILE.print("]");
           CUSTOM_TEXT_FILE.close();
+          PROPAGATION_TEXT_FILE.close();
           // end json format
           // Log simulation time in milliseconds
           System.out.println(simulationTime);
@@ -463,22 +450,24 @@ public class Main {
    */
   //TODO use logger
   public static void writeGraph(int blockHeight) {
-    try {
-      FileWriter fw = new FileWriter(
-          new File(OUT_FILE_URI.resolve("./output/graph/" + blockHeight + ".txt")), false);
-      PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
+    if(PRINTGRAPH){
+        try {
+          FileWriter fw = new FileWriter(
+              new File(OUT_FILE_URI.resolve("./output/graph/" + blockHeight + ".txt")), false);
+          PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
 
-      for (int index = 1; index <= getSimulatedNodes().size(); index++) {
-        Node node = getSimulatedNodes().get(index - 1);
-        for (int i = 0; i < node.getNeighbors().size(); i++) {
-          Node neighbor = node.getNeighbors().get(i);
-          pw.println(node.getNodeID() + " " + neighbor.getNodeID());
+          for (int index = 1; index <= getSimulatedNodes().size(); index++) {
+            Node node = getSimulatedNodes().get(index - 1);
+            for (int i = 0; i < node.getNeighbors().size(); i++) {
+              Node neighbor = node.getNeighbors().get(i);
+              pw.println(node.getNodeID() + " " + neighbor.getNodeID());
+            }
+          }
+          pw.close();
+
+        } catch (IOException ex) {
+          ex.printStackTrace();
         }
-      }
-      pw.close();
-
-    } catch (IOException ex) {
-      ex.printStackTrace();
     }
   }
 

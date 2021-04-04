@@ -124,12 +124,23 @@ public class Node {
    * The current minting task
    */
   private AbstractMintingTask mintingTask = null;
-
+  //******************@Process Status@******************//
   /**
-   * In the process of sending blocks.
+   * time bring trouble.
+   */
+  private long AliveTime ;
+  /**
+   * @sendingBlock    In the process of sending blocks.
+   * @localBusying    In busy with local thread
+   * @networkBusying  network are In busy
+   * @crashed         Crashed
    */
   // TODO verify
   private boolean sendingBlock = false;
+  private boolean localBusying = false;
+  private boolean networkBusying = false;
+  private boolean crashed = false;
+
 
   //TODO
   private final ArrayList<AbstractMessageTask> messageQue = new ArrayList<>();
@@ -167,6 +178,7 @@ public class Node {
     this.isChurnNode = isChurnNode;
     this.balance = 0;
     this.miningPowerWaste = 0;
+    this.AliveTime = getCurrentTime();
 
     try {
       this.routingTable = (AbstractRoutingTable) Class.forName(routingTableName).getConstructor(
@@ -447,6 +459,7 @@ public class Node {
           downloadingBlocks.add(block);
         } else if (!block.isOnSameChainAs(this.block)) {
           // get new orphan block
+
           AbstractMessageTask task = new RecMessageTask(this, from, block);
           putTask(task);
           downloadingBlocks.add(block);

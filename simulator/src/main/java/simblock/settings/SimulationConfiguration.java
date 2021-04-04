@@ -23,15 +23,18 @@ public class SimulationConfiguration {
   /**
    * PRINTOUT       Maybe flow-block
    * PRINTADDBLOCK  add-block  node's add-block event.Not for Network
+   * PRINTGRAPH     Graph from nodes Network ,print to visualize,false can save storage
    * VERBOSE        every addOnChain tell in console
    * QUIET          margin of console.log come into quiet
    * MEMORYSAVEMODE maybe some memorysave operation
+   * NOEXTRA        stop single Node Random Event ,to save some memory
    */
   public static final boolean PRINTOUT = false;
   public static final boolean PRINTADDBLOCK = false;
+  public static final boolean PRINTGRAPH = false;
   public static final boolean VERBOSE = true;
   public static final boolean QUIET = false;
-  public static final boolean MEMORYSAVEMODE = false;
+  public static final boolean MEMORYSAVEMODE = true;
   public static final boolean NOEXTRA = false;
 
   /**

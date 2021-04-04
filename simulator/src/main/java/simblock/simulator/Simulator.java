@@ -16,7 +16,10 @@
 
 package simblock.simulator;
 
-import static simblock.settings.SimulationConfiguration.MEMORYSAVEMODE;
+import static simblock.settings.NetworkConfiguration.REGION_LIST;
+import static simblock.settings.SimulationConfiguration.*;
+import static simblock.simulator.Main.PROPAGATION_TEXT_FILE;
+import static simblock.simulator.Main.STATIC_JSON_FILE;
 import static simblock.simulator.Timer.getCurrentTime;
 
 import java.io.*;
@@ -154,9 +157,9 @@ public class Simulator {
     } else {
       // If the block has not been seen by any node and there is ||no memory|| allocated
       // TODO move magic number to constant
-       if ((MEMORYSAVEMODE)&(observedBlocks.size() > 10)) {
-         //
+       if ((MEMORYSAVEMODE)&(observedBlocks.size() > 0)) {
          // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
+         // Now there is no limit
          printPropagation(observedBlocks.get(0), observedPropagations.get(0));
          observedBlocks.remove(0);
          observedPropagations.remove(0);
@@ -188,11 +191,33 @@ public class Simulator {
   public static void printPropagation(Block block, LinkedHashMap<Integer, Long> propagation) {
     // Print block and its height
     //TODO block does not have a toString method, what is printed here
-    System.out.println(block + ":" + block.getHeight());
+//    PROPAGATION_TEXT_FILE.print(block + ":" + block.getHeight() + '\n');
     for (Map.Entry<Integer, Long> timeEntry : propagation.entrySet()) {
-      System.out.println(timeEntry.getKey() + "," + timeEntry.getValue());
+      PROPAGATION_TEXT_FILE.print(timeEntry.getKey() + "," + timeEntry.getValue() + '\n');
     }
-    System.out.println();
+//    PROPAGATION_TEXT_FILE.print('\n');
+    PROPAGATION_TEXT_FILE.flush();
+
+  }
+  /**
+   * Prints the currently active regions to outfile.
+   */
+  //TODO
+  public static void printNetProtocolSetting() {
+    STATIC_JSON_FILE.print("{\"NetProtocolSetting\":[");
+    STATIC_JSON_FILE.print("{");
+    STATIC_JSON_FILE.print("\"NUM_OF_NODES\":" + NUM_OF_NODES + ",\n");
+    STATIC_JSON_FILE.print("\"END_BLOCK_HEIGHT\":" + END_BLOCK_HEIGHT + ",\n");
+    STATIC_JSON_FILE.print("\"BLOCK_SIZE\":" + BLOCK_SIZE + ",\n");
+    STATIC_JSON_FILE.print("\"NOEXTRA\":" + NOEXTRA + ",\n");
+    STATIC_JSON_FILE.print("\"INTERVAL\":" + INTERVAL + ",\n");
+    STATIC_JSON_FILE.print("\"CBR_USAGE_RATE\":" + CBR_USAGE_RATE + ",\n");
+    STATIC_JSON_FILE.print("\"CHURN_NODE_RATE\":" + CHURN_NODE_RATE + ",\n");
+    STATIC_JSON_FILE.print("\"COMPACT_BLOCK_SIZE\":" + COMPACT_BLOCK_SIZE + ",\n");
+    STATIC_JSON_FILE.print("\"CBR_FAILURE_RATE_FOR_CONTROL_NODE\":" + CBR_FAILURE_RATE_FOR_CONTROL_NODE + ",\n");
+    STATIC_JSON_FILE.print("\"CBR_FAILURE_RATE_FOR_CHURN_NODE\":" + CBR_FAILURE_RATE_FOR_CHURN_NODE );
+    STATIC_JSON_FILE.print("}]}\n");
+    STATIC_JSON_FILE.flush();
   }
 
   /**
@@ -200,14 +225,15 @@ public class Simulator {
    * {@link Simulator#printPropagation(Block, LinkedHashMap)}.
    */
   public static void printAllPropagation(ArrayList<Block> blockList, Set<Block> orphans) {
+    PROPAGATION_TEXT_FILE.print("printAllPropagation\n");
     for (Block b : blockList) {
         if (!orphans.contains(b)) {
-          System.out.println("onchain");
-          printPropagation(b, observedPropagations.get(observedBlocks.indexOf(b)));
-        } else {
-          System.out.println("orphan");
-          printPropagation(b, observedPropagations.get(observedBlocks.indexOf(b)));
+          PROPAGATION_TEXT_FILE.print("onchain\n");
         }
+        else {
+          PROPAGATION_TEXT_FILE.print("orphan\n");
+        }
+      printPropagation(b, observedPropagations.get(observedBlocks.indexOf(b)));
     }
 
 //    for (int i = 0; i < observedBlocks.size(); i++) {
