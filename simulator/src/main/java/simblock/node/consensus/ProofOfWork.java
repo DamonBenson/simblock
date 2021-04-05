@@ -22,7 +22,7 @@ import java.math.BigInteger;
 import simblock.block.Block;
 import simblock.block.ProofOfWorkBlock;
 import simblock.node.Node;
-import simblock.task.MiningTask;
+import simblock.task.PoWMiningTask;
 
 /**
  * The type Proof of work.
@@ -42,13 +42,13 @@ public class ProofOfWork extends AbstractConsensusAlgo {
    * Mints a new block by simulating Proof of Work.
    */
   @Override
-  public MiningTask minting() {
+  public PoWMiningTask minting() {
     Node selfNode = this.getSelfNode();
     ProofOfWorkBlock parent = (ProofOfWorkBlock) selfNode.getBlock();
     BigInteger difficulty = parent.getNextDifficulty();
     double p = 1.0 / difficulty.doubleValue();
     double u = random.nextDouble();
-    return p <= Math.pow(2, -53) ? null : new MiningTask(selfNode, (long) (Math.log(u) / Math.log(
+    return p <= Math.pow(2, -53) ? null : new PoWMiningTask(selfNode, (long) (Math.log(u) / Math.log(
         1.0 - p) / selfNode.getMiningPower()), difficulty);
   }
 

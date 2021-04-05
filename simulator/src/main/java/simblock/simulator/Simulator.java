@@ -16,13 +16,11 @@
 
 package simblock.simulator;
 
-import static simblock.settings.NetworkConfiguration.REGION_LIST;
 import static simblock.settings.SimulationConfiguration.*;
 import static simblock.simulator.Main.PROPAGATION_TEXT_FILE;
 import static simblock.simulator.Main.STATIC_JSON_FILE;
 import static simblock.simulator.Timer.getCurrentTime;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;

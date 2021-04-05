@@ -37,6 +37,7 @@ import java.util.Random;
 import java.util.Set;
 
 import simblock.block.Block;
+import simblock.block.PoWGhostBlock;
 import simblock.node.consensus.AbstractConsensusAlgo;
 import simblock.node.routing.AbstractRoutingTable;
 import simblock.task.AbstractMessageTask;
@@ -100,13 +101,13 @@ public class Node {
 
   /**
    * Whether the node uses compact block relay.
-   * Mind can't Change
+   * Hope Mind can't Change,so it's final
    */
   private final boolean useCBR;
 
   /**
    * The node causes churn.
-   * Mind can't Change
+   * Hope Mind can't Change,so it's final
    */
   private final boolean isChurnNode;
 
@@ -125,6 +126,7 @@ public class Node {
    */
   private AbstractMintingTask mintingTask = null;
   //******************@Process Status@******************//
+  //TODO Node own it's status
   /**
    * time bring trouble.
    */
@@ -140,7 +142,7 @@ public class Node {
   private boolean localBusying = false;
   private boolean networkBusying = false;
   private boolean crashed = false;
-
+  //******************@Process Status@******************//
 
   //TODO
   private final ArrayList<AbstractMessageTask> messageQue = new ArrayList<>();
@@ -402,6 +404,14 @@ public class Node {
     if (task != null) {
       putTask(task);
     }
+  }
+
+  /**
+   * Generates a uncle
+   */
+  // getUncle
+  public PoWGhostBlock getUncle() {
+    return new PoWGhostBlock(null,null,0,null,null,null);
   }
 
   /**

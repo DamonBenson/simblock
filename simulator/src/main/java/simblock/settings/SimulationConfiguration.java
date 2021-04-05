@@ -75,6 +75,8 @@ public class SimulationConfiguration {
   //TODO not documented in markdown
   // TODO return to PoW
   public static final String ALGO = "simblock.node.consensus.ProofOfWork";
+  //"simblock.node.consensus.ProofOfWork","simblock.node.consensus.PoWEth"
+
 
   /**
    * The average mining power of each node. Mining power corresponds to Hash Rate in Bitcoin, and
@@ -103,6 +105,11 @@ public class SimulationConfiguration {
    * The reward a PoS minter gets for staking.
    */
   public static final double STAKING_REWARD = 0.01;
+
+  /**
+   * whether use GHOST protocol
+   */
+  public static final boolean GHOST_USE_MODE = true; // 0.964f
 
   /**
    * The usage rate of compact block relay (CBR) protocol.
