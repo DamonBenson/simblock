@@ -41,6 +41,11 @@ public class GHOSTBlock extends Block {
   private final Block uncleB;
 
   /**
+   * The parent {@link Block}.
+   */
+  private final GHOSTBlock parent;
+
+  /**
    * Instantiates a new Proof of work PoWGhostBlock.
    *
    * @param parent     the parent
@@ -52,6 +57,7 @@ public class GHOSTBlock extends Block {
    */
   public GHOSTBlock(GHOSTBlock parent, Node minter, long time, BigInteger difficulty, Block uncleA, Block uncleB) {
     super(parent, minter, time);
+    this.parent = parent;
     this.difficulty = difficulty;
     this.uncleA = uncleA;
     this.uncleB = uncleB;
@@ -120,6 +126,12 @@ public class GHOSTBlock extends Block {
    * @return the uncleB
    */
   public Block getUncleB() {    return this.uncleB;  }
+  /**
+   * Get parent block.
+   *
+   * @return the block
+   */
+  public GHOSTBlock getParent() {    return this.parent;  }
 }
 
 

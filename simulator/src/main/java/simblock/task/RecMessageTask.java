@@ -17,6 +17,7 @@
 package simblock.task;
 
 import simblock.block.Block;
+import simblock.block.GHOSTBlock;
 import simblock.node.Node;
 
 /**
@@ -28,7 +29,7 @@ public class RecMessageTask extends AbstractMessageTask {
   /**
    * The block to  be received.
    */
-  private final Block block;
+  private final GHOSTBlock block;
 
   /**
    * Instantiates a new Rec message task.
@@ -37,7 +38,7 @@ public class RecMessageTask extends AbstractMessageTask {
    * @param to    the receiving node
    * @param block the block to be received
    */
-  public RecMessageTask(Node from, Node to, Block block) {
+  public RecMessageTask(Node from, Node to, GHOSTBlock block) {
     super(from, to);
     this.block = block;
   }
@@ -47,7 +48,7 @@ public class RecMessageTask extends AbstractMessageTask {
    *
    * @return the block
    */
-  public Block getBlock() {
+  public GHOSTBlock getBlock() {
     return this.block;
   }
 

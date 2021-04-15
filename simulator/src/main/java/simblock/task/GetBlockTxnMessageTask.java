@@ -17,6 +17,7 @@
 package simblock.task;
 
 import simblock.block.Block;
+import simblock.block.GHOSTBlock;
 import simblock.node.Node;
 
 /**
@@ -27,9 +28,9 @@ public class GetBlockTxnMessageTask extends AbstractMessageTask {
 	/**
      * The {@link Block} that is sent by from as compact block.
      */
-	private Block block;
+	private GHOSTBlock block;
 
-	public GetBlockTxnMessageTask(Node from, Node to, Block block) {
+	public GetBlockTxnMessageTask(Node from, Node to, GHOSTBlock block) {
 		super(from, to);
 		this.block = block;
 	}
@@ -39,7 +40,7 @@ public class GetBlockTxnMessageTask extends AbstractMessageTask {
      *
      * @return the block
      */
-	public Block getBlock(){
+	public GHOSTBlock getBlock(){
 		return this.block;
 	}	
 }

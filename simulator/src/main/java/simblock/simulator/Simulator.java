@@ -16,18 +16,18 @@
 
 package simblock.simulator;
 
-import static simblock.settings.SimulationConfiguration.*;
-import static simblock.simulator.Main.PROPAGATION_TEXT_FILE;
-import static simblock.simulator.Main.STATIC_JSON_FILE;
-import static simblock.simulator.Timer.getCurrentTime;
+import simblock.block.Block;
+import simblock.node.Node;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import simblock.block.Block;
-import simblock.node.Node;
+import static simblock.settings.SimulationConfiguration.*;
+import static simblock.simulator.Main.PROPAGATION_TEXT_FILE;
+import static simblock.simulator.Main.STATIC_JSON_FILE;
+import static simblock.simulator.Timer.getCurrentTime;
 
 
 /**
@@ -131,9 +131,9 @@ public class Simulator {
    * recording the absolute time it took for a node to witness the block.
    */
   private static final ArrayList<LinkedHashMap<Integer, Long>> observedPropagations =
-      new ArrayList<>();
+          new ArrayList<>();
 
-/**
+  /**
    * Handle the arrival of a new block. For every observed block, propagation information is
    * updated, and for a new
    * block propagation information is created.
@@ -148,20 +148,20 @@ public class Simulator {
     if (observedBlocks.contains(block)) {
       // Get the propagation information for the current block
       LinkedHashMap<Integer, Long> propagation = observedPropagations.get(
-          observedBlocks.indexOf(block)
+              observedBlocks.indexOf(block)
       );
       // Update information for the new block
       propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
     } else {
       // If the block has not been seen by any node and there is ||no memory|| allocated
       // TODO move magic number to constant
-       if ((MEMORYSAVEMODE)&(observedBlocks.size() > 0)) {
-         // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
-         // Now there is no limit
-         printPropagation(observedBlocks.get(0), observedPropagations.get(0));
-         observedBlocks.remove(0);
-         observedPropagations.remove(0);
-       }
+      if ((MEMORYSAVEMODE)&(observedBlocks.size() > 0)) {
+        // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
+        // Now there is no limit
+        printPropagation(observedBlocks.get(0), observedPropagations.get(0));
+        observedBlocks.remove(0);
+        observedPropagations.remove(0);
+      }
       // If the block has not been seen by any node and there is additional memory
       LinkedHashMap<Integer, Long> propagation = new LinkedHashMap<>();
       // propagation   (节点ID，该节点收到该区块的时间：区别于接受区块)
@@ -220,17 +220,17 @@ public class Simulator {
 
   /**
    * Print propagation information about all blocks, internally relying on
-   * {@link Simulator#printPropagation(Block, LinkedHashMap)}.
+   * {@link SimulatorGHOST#printPropagation(Block, LinkedHashMap)}.
    */
   public static void printAllPropagation(ArrayList<Block> blockList, Set<Block> orphans) {
     PROPAGATION_TEXT_FILE.print("printAllPropagation\n");
     for (Block b : blockList) {
-        if (!orphans.contains(b)) {
-          PROPAGATION_TEXT_FILE.print("onchain\n");
-        }
-        else {
-          PROPAGATION_TEXT_FILE.print("orphan\n");
-        }
+      if (!orphans.contains(b)) {
+        PROPAGATION_TEXT_FILE.print("onchain\n");
+      }
+      else {
+        PROPAGATION_TEXT_FILE.print("orphan\n");
+      }
       printPropagation(b, observedPropagations.get(observedBlocks.indexOf(b)));
     }
 

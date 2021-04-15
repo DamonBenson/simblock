@@ -29,7 +29,7 @@ import java.util.*;
 
 import static simblock.settings.SimulationConfiguration.*;
 import static simblock.simulator.Network.*;
-import static simblock.simulator.SimulatorGHOST.*;
+import static simblock.simulator.Simulator.*;
 import static simblock.simulator.Timer.*;
 
 

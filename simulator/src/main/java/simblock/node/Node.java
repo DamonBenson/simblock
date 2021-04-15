@@ -358,13 +358,15 @@ public class Node {
       removeTask(this.mintingTask);
       this.mintingTask = null;
     }
-    this.orphans.remove(block.getUncleA());
-    this.orphans.remove(block.getUncleB());
     // Update the current block
     this.block = newBlock;
     printAddBlock(newBlock);
     // Observe and handle new block arrival
     arriveBlock(newBlock, this);
+    if(this.orphans.isEmpty())
+      return;
+    this.orphans.remove(block.getUncleA());
+    this.orphans.remove(block.getUncleB());
   }
 
   /**
