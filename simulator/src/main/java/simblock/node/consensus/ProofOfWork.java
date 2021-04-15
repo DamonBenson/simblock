@@ -20,6 +20,7 @@ import static simblock.simulator.Main.random;
 
 import java.math.BigInteger;
 import simblock.block.Block;
+import simblock.block.GHOSTBlock;
 import simblock.block.ProofOfWorkBlock;
 import simblock.node.Node;
 import simblock.task.PoWMiningTask;
@@ -84,7 +85,7 @@ public class ProofOfWork extends AbstractConsensusAlgo {
   }
 
   @Override
-  public ProofOfWorkBlock genesisBlock() {
+  public GHOSTBlock genesisBlock() {
     return ProofOfWorkBlock.genesisBlock(this.getSelfNode());
   }
 

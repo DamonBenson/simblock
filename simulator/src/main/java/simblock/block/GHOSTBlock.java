@@ -26,7 +26,7 @@ import static simblock.simulator.Simulator.getTargetInterval;
 /**
  * The type Proof of work GhostBlock.
  */
-public class PoWGhostBlock extends Block {
+public class GHOSTBlock extends Block {
   private final BigInteger difficulty;
   private final BigInteger totalDifficulty;
   private final BigInteger nextDifficulty;
@@ -50,14 +50,14 @@ public class PoWGhostBlock extends Block {
    * @param uncleA the uncleA
    * @param uncleB the uncleB
    */
-  public PoWGhostBlock(PoWGhostBlock parent, Node minter, long time, BigInteger difficulty, Block uncleA, Block uncleB) {
+  public GHOSTBlock(GHOSTBlock parent, Node minter, long time, BigInteger difficulty, Block uncleA, Block uncleB) {
     super(parent, minter, time);
     this.difficulty = difficulty;
     this.uncleA = uncleA;
     this.uncleB = uncleB;
     if (parent == null) {
       this.totalDifficulty = BigInteger.ZERO.add(difficulty);
-      this.nextDifficulty = PoWGhostBlock.genesisNextDifficulty;
+      this.nextDifficulty = GHOSTBlock.genesisNextDifficulty;
     } else {
       this.totalDifficulty = parent.getTotalDifficulty().add(difficulty);
       // TODO: difficulty adjustment
@@ -100,13 +100,13 @@ public class PoWGhostBlock extends Block {
    * @param minter the minter
    * @return the genesis block
    */
-  public static PoWGhostBlock genesisBlock(Node minter) {
+  public static GHOSTBlock genesisBlock(Node minter) {
     long totalMiningPower = 0;
     for (Node node : getSimulatedNodes()) {
       totalMiningPower += node.getMiningPower();
     }
     genesisNextDifficulty = BigInteger.valueOf(totalMiningPower * getTargetInterval());
-    return new PoWGhostBlock(null, minter, 0, BigInteger.ZERO, null, null);
+    return new GHOSTBlock(null, minter, 0, BigInteger.ZERO, null, null);
   }
   /**
    * Gets the block uncleA.

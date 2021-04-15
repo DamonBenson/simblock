@@ -16,7 +16,7 @@
 
 package simblock.task;
 
-import simblock.block.PoWGhostBlock;
+import simblock.block.GHOSTBlock;
 import simblock.block.Block;
 import simblock.node.Node;
 
@@ -49,8 +49,8 @@ public class EthMiningTask extends AbstractMintingTask {
 
   @Override
   public void run() {
-    PoWGhostBlock createdBlock = new PoWGhostBlock(
-        (PoWGhostBlock) this.getParent(), this.getMinter(), getCurrentTime(),
+    GHOSTBlock createdBlock = new GHOSTBlock(
+        (GHOSTBlock) this.getParent(), this.getMinter(), getCurrentTime(),
         this.difficulty, this.uncleA, this.uncleB
     );
     this.getMinter().receiveBlock(createdBlock);

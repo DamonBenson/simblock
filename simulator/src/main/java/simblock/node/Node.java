@@ -31,13 +31,10 @@ import static simblock.simulator.Timer.getCurrentTime;
 import static simblock.simulator.Timer.putTask;
 import static simblock.simulator.Timer.removeTask;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import simblock.block.Block;
-import simblock.block.PoWGhostBlock;
+import simblock.block.GHOSTBlock;
 import simblock.node.consensus.AbstractConsensusAlgo;
 import simblock.node.routing.AbstractRoutingTable;
 import simblock.task.AbstractMessageTask;
@@ -114,12 +111,13 @@ public class Node {
   /**
    * The current block.
    */
-  protected Block block;
+  protected GHOSTBlock block;
 
   /**
    * Orphaned blocks known to node.
    */
-  protected final Set<Block> orphans = new HashSet<>();
+  private final List<GHOSTBlock> orphans = new ArrayList<>();
+
 
   /**
    * The current minting task
@@ -147,7 +145,7 @@ public class Node {
   //TODO
   protected final ArrayList<AbstractMessageTask> messageQue = new ArrayList<>();
   // TODO
-  protected final Set<Block> downloadingBlocks = new HashSet<>();
+  protected final Set<Block> downloadingBlocks = new HashSet<Block>();
 
   /**
    * Processing time of tasks expressed in milliseconds.
@@ -186,13 +184,25 @@ public class Node {
       this.routingTable = (AbstractRoutingTable) Class.forName(routingTableName).getConstructor(
           Node.class).newInstance(this);
       this.consensusAlgo = (AbstractConsensusAlgo) Class.forName(consensusAlgoName).getConstructor(
-          Node.class).newInstance(this);
+              Node.class).newInstance(this);
       this.setNumConnection(numConnection);
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
-
+  /**
+   * Generates a uncle
+   */
+  public GHOSTBlock generateUncleA() {
+    if(this.orphans.isEmpty())
+      return null;
+    return this.orphans.get(this.orphans.size()-1);
+  }
+  public GHOSTBlock generateUncleB() {
+    if(this.orphans.isEmpty())
+      return null;
+    return this.orphans.get(this.orphans.size()-2);
+  }
   /**
    * Gets the node id.
    *
@@ -258,7 +268,7 @@ public class Node {
    *
    * @return the block
    */
-  public Block getBlock() {
+  public GHOSTBlock getBlock() {
     return this.block;
   }
 
@@ -267,7 +277,7 @@ public class Node {
    *
    * @return the orphans
    */
-  public Set<Block> getOrphans() {
+  public List<GHOSTBlock> getOrphans() {
     return this.orphans;
   }
 
@@ -332,7 +342,7 @@ public class Node {
    * Mint the genesis block.
    */
   public void genesisBlock() {
-    Block genesis = this.consensusAlgo.genesisBlock();
+    GHOSTBlock genesis = this.consensusAlgo.genesisBlock();
     this.receiveBlock(genesis);
   }
 
@@ -342,12 +352,14 @@ public class Node {
    *
    * @param newBlock the new block
    */
-  public void addToChain(Block newBlock) {
+  public void addToChain(GHOSTBlock newBlock) {
     // If the node has been minting
     if (this.mintingTask != null) {
       removeTask(this.mintingTask);
       this.mintingTask = null;
     }
+    this.orphans.remove(block.getUncleA());
+    this.orphans.remove(block.getUncleB());
     // Update the current block
     this.block = newBlock;
     printAddBlock(newBlock);
@@ -360,7 +372,7 @@ public class Node {
    *
    * @param newBlock the block to be logged
    */
-  protected void printAddBlock(Block newBlock) {
+  protected void printAddBlock(GHOSTBlock newBlock) {
     if(!PRINTADDBLOCK)
       return;
     OUT_JSON_FILE.print("{");
@@ -381,7 +393,7 @@ public class Node {
    * @param validBlock  the valid block
    */
   //TODO check this out later
-  public void addOrphans(Block orphanBlock, Block validBlock) {
+  public void addOrphans(GHOSTBlock orphanBlock, GHOSTBlock validBlock) {
     if (orphanBlock != validBlock) {
       this.orphans.add(orphanBlock);
       this.orphans.remove(validBlock);
@@ -411,7 +423,7 @@ public class Node {
    *
    * @param block the block
    */
-  public void sendInv(Block block) {
+  public void sendInv(GHOSTBlock block) {
     for (Node to : this.routingTable.getNeighbors()) {
       AbstractMessageTask task = new InvMessageTask(this, to, block);
       putTask(task);
@@ -423,7 +435,7 @@ public class Node {
    *
    * @param block the block
    */
-  public void receiveBlock(Block block) {
+  public void receiveBlock(GHOSTBlock block) {
     if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {
       if (this.block != null && !this.block.isOnSameChainAs(block)) {
         // If orphan mark orphan
@@ -453,7 +465,7 @@ public class Node {
     Node from = message.getFrom();
 
     if (message instanceof InvMessageTask) {
-      Block block = ((InvMessageTask) message).getBlock();
+      GHOSTBlock block = ((InvMessageTask) message).getBlock();
       if (!this.orphans.contains(block) && !this.downloadingBlocks.contains(block)) {
         if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {
           AbstractMessageTask task = new RecMessageTask(this, from, block);
@@ -484,7 +496,7 @@ public class Node {
     }
 
     if(message instanceof CmpctBlockMessageTask){
-			Block block = ((CmpctBlockMessageTask) message).getBlock();
+      GHOSTBlock block = ((CmpctBlockMessageTask) message).getBlock();
       Random random = new Random();
       float CBRfailureRate = this.isChurnNode ? CBR_FAILURE_RATE_FOR_CHURN_NODE : CBR_FAILURE_RATE_FOR_CONTROL_NODE;
 			boolean success = random.nextDouble() > CBRfailureRate ? true : false;
@@ -498,7 +510,7 @@ public class Node {
     }
 
     if (message instanceof BlockMessageTask) {
-      Block block = ((BlockMessageTask) message).getBlock();
+      GHOSTBlock block = ((BlockMessageTask) message).getBlock();
       downloadingBlocks.remove(block);
       this.receiveBlock(block);
     }
@@ -531,7 +543,7 @@ public class Node {
       AbstractMessageTask messageTask;
 
       if(this.messageQue.get(0) instanceof RecMessageTask){
-        Block block = ((RecMessageTask) this.messageQue.get(0)).getBlock();
+        GHOSTBlock block = ((RecMessageTask) this.messageQue.get(0)).getBlock();
         // If use compact block relay.
         if(this.messageQue.get(0).getFrom().useCBR && this.useCBR) {
           // Convert bytes to bits and divide by the bandwidth expressed as bit per millisecond, add
@@ -547,7 +559,7 @@ public class Node {
         }
       } else if(this.messageQue.get(0) instanceof GetBlockTxnMessageTask) {
         // Else from requests missing transactions.
-        Block block = ((GetBlockTxnMessageTask) this.messageQue.get(0)).getBlock();
+        GHOSTBlock block = ((GetBlockTxnMessageTask) this.messageQue.get(0)).getBlock();
         long delay = getFailedBlockSize() * 8 / (bandwidth / 1000) + processingTimeExtra(processingTime, -1);
         messageTask = new BlockMessageTask(this, to, block, delay);
       } else {

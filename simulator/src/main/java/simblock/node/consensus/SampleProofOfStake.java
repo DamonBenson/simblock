@@ -20,6 +20,7 @@ import static simblock.simulator.Main.random;
 
 import java.math.BigInteger;
 import simblock.block.Block;
+import simblock.block.GHOSTBlock;
 import simblock.block.SamplePoSBlock;
 import simblock.node.Node;
 import simblock.task.SampleStakingTask;
@@ -74,7 +75,7 @@ public class SampleProofOfStake extends AbstractConsensusAlgo {
   }
 
   @Override
-  public SamplePoSBlock genesisBlock() {
+  public GHOSTBlock genesisBlock() {
     return SamplePoSBlock.genesisBlock(this.getSelfNode());
   }
 }

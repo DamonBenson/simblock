@@ -1,9 +1,8 @@
 package simblock.node.consensus;
 
 import simblock.block.Block;
-import simblock.block.PoWGhostBlock;
+import simblock.block.GHOSTBlock;
 
-import simblock.node.GhostNode;
 import simblock.node.Node;
 import simblock.task.EthMiningTask;
 
@@ -15,14 +14,14 @@ import static simblock.simulator.Main.random;
  */
 @SuppressWarnings("unused")
 public class PoWEth extends AbstractConsensusAlgo {
-    private final GhostNode selfNode;
+    private final Node selfNode;
 
-    public PoWEth(GhostNode selfNode) {
+    public PoWEth(Node selfNode) {
         super(selfNode);
         this.selfNode = selfNode;
     }
 
-    public GhostNode getSelfNode() {
+    public Node getSelfNode() {
         return this.selfNode;
     }
     /**
@@ -30,12 +29,12 @@ public class PoWEth extends AbstractConsensusAlgo {
      */
     @Override
     public EthMiningTask minting() {
-        GhostNode selfNode = this.getSelfNode();
-        PoWGhostBlock parent = (PoWGhostBlock) selfNode.getBlock();
+        Node selfNode = this.getSelfNode();
+        GHOSTBlock parent = (GHOSTBlock) selfNode.getBlock();
         BigInteger difficulty = parent.getNextDifficulty();
         double p = 1.0 / difficulty.doubleValue();
         double u = random.nextDouble();
-        return p <= Math.pow(2, -53) ? null : new EthMiningTask(selfNode, (long) (Math.log(u) / Math.log(
+        return p <= Math.pow(2, -53) ? null : new EthMiningTask((Node) selfNode, (long) (Math.log(u) / Math.log(
                 1.0 - p) / selfNode.getMiningPower()), difficulty, selfNode.generateUncleA(), selfNode.generateUncleB());
     }
 
@@ -51,14 +50,14 @@ public class PoWEth extends AbstractConsensusAlgo {
      */
     @Override
     public boolean isReceivedBlockValid(Block receivedBlock, Block currentBlock) {
-        if (!(receivedBlock instanceof PoWGhostBlock)) {
+        if (!(receivedBlock instanceof GHOSTBlock)) {
             return false;
         }
-        PoWGhostBlock recPoWBlock = (PoWGhostBlock) receivedBlock;
-        PoWGhostBlock currPoWBlock = (PoWGhostBlock) currentBlock;
+        GHOSTBlock recPoWBlock = (GHOSTBlock) receivedBlock;
+        GHOSTBlock currPoWBlock = (GHOSTBlock) currentBlock;
         int receivedBlockHeight = receivedBlock.getHeight();
-        PoWGhostBlock receivedBlockParent = receivedBlockHeight == 0 ? null :
-                (PoWGhostBlock) receivedBlock.getBlockWithHeight(receivedBlockHeight - 1);
+        GHOSTBlock receivedBlockParent = receivedBlockHeight == 0 ? null :
+                (GHOSTBlock) receivedBlock.getBlockWithHeight(receivedBlockHeight - 1);
 
         //TODO - dangerous to split due to short circuit operators being used, refactor?
         return (
@@ -71,7 +70,7 @@ public class PoWEth extends AbstractConsensusAlgo {
     }
 
     @Override
-    public PoWGhostBlock genesisBlock() {
-        return PoWGhostBlock.genesisBlock(this.getSelfNode());
+    public GHOSTBlock genesisBlock() {
+        return GHOSTBlock.genesisBlock(this.getSelfNode());
     }
 }

@@ -17,6 +17,7 @@
 package simblock.node.consensus;
 
 import simblock.block.Block;
+import simblock.block.GHOSTBlock;
 import simblock.node.Node;
 import simblock.task.AbstractMintingTask;
 
@@ -65,5 +66,5 @@ public abstract class AbstractConsensusAlgo {
    *
    * @return the genesis block
    */
-  public abstract Block genesisBlock();
+  public abstract GHOSTBlock genesisBlock();
 }
