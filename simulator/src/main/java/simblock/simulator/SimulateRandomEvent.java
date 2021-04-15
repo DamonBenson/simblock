@@ -25,7 +25,7 @@ public class SimulateRandomEvent {
      */
     //TODO implement investment
     public static long processingTimeExtra(long processTime, long investment) {
-        if (NOEXTRA){
+        if (NOEXTRA == false){
             return processTime;
         }
         long simulatedProcessTime = processTime;

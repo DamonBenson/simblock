@@ -3,6 +3,7 @@ package simblock.node.consensus;
 import simblock.block.Block;
 import simblock.block.PoWGhostBlock;
 
+import simblock.node.GhostNode;
 import simblock.node.Node;
 import simblock.task.EthMiningTask;
 
@@ -14,24 +15,28 @@ import static simblock.simulator.Main.random;
  */
 @SuppressWarnings("unused")
 public class PoWEth extends AbstractConsensusAlgo {
+    private final GhostNode selfNode;
 
-    public PoWEth(Node selfNode) {
+    public PoWEth(GhostNode selfNode) {
         super(selfNode);
-
+        this.selfNode = selfNode;
     }
 
+    public GhostNode getSelfNode() {
+        return this.selfNode;
+    }
     /**
      * Mints a new block by simulating Proof of Work.
      */
     @Override
     public EthMiningTask minting() {
-        Node selfNode = this.getSelfNode();
+        GhostNode selfNode = this.getSelfNode();
         PoWGhostBlock parent = (PoWGhostBlock) selfNode.getBlock();
         BigInteger difficulty = parent.getNextDifficulty();
         double p = 1.0 / difficulty.doubleValue();
         double u = random.nextDouble();
         return p <= Math.pow(2, -53) ? null : new EthMiningTask(selfNode, (long) (Math.log(u) / Math.log(
-                1.0 - p) / selfNode.getMiningPower()), difficulty, selfNode.getUncle(), selfNode.getUncle());
+                1.0 - p) / selfNode.getMiningPower()), difficulty, selfNode.generateUncleA(), selfNode.generateUncleB());
     }
 
     /**

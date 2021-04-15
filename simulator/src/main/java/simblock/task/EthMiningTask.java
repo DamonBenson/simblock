@@ -17,6 +17,7 @@
 package simblock.task;
 
 import simblock.block.PoWGhostBlock;
+import simblock.block.Block;
 import simblock.node.Node;
 
 import java.math.BigInteger;
@@ -28,8 +29,8 @@ import static simblock.simulator.Timer.getCurrentTime;
  */
 public class EthMiningTask extends AbstractMintingTask {
   private final BigInteger difficulty;
-  private final PoWGhostBlock uncleA;
-  private final PoWGhostBlock uncleB;
+  private final Block uncleA;
+  private final Block uncleB;
 
   /**
    * Instantiates a new Mining task.
@@ -39,7 +40,7 @@ public class EthMiningTask extends AbstractMintingTask {
    * @param difficulty the difficulty
    */
   //TODO how is the difficulty expressed and used here?
-  public EthMiningTask(Node minter, long interval, BigInteger difficulty, PoWGhostBlock uncleA, PoWGhostBlock uncleB) {
+  public EthMiningTask(Node minter, long interval, BigInteger difficulty, Block uncleA, Block uncleB) {
     super(minter, interval);
     this.difficulty = difficulty;
     this.uncleA = uncleA;

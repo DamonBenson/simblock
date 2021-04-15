@@ -24,33 +24,75 @@ import static simblock.simulator.Simulator.getSimulatedNodes;
 import static simblock.simulator.Simulator.getTargetInterval;
 
 /**
- * The representation of a block.
+ * The type Proof of work GhostBlock.
  */
-public class PoWGhostBlock extends ProofOfWorkBlock{
+public class PoWGhostBlock extends Block {
+  private final BigInteger difficulty;
+  private final BigInteger totalDifficulty;
+  private final BigInteger nextDifficulty;
+  private static BigInteger genesisNextDifficulty;
   /**
    * Unique uncleA.
    */
-  private final PoWGhostBlock uncleA;
+  private final Block uncleA;
   /**
    * Unique uncleB.
    */
-  private final PoWGhostBlock uncleB;
-
-  private static BigInteger genesisNextDifficulty;//@override ProofOfWorkBlock
+  private final Block uncleB;
 
   /**
-   * Instantiates a new Block.
+   * Instantiates a new Proof of work PoWGhostBlock.
    *
-   * @param parent the parent
-   * @param minter the minter
-   * @param time   the time
+   * @param parent     the parent
+   * @param minter     the minter
+   * @param time       the time
+   * @param difficulty the difficulty
+   * @param uncleA the uncleA
+   * @param uncleB the uncleB
    */
-  public PoWGhostBlock(PoWGhostBlock parent, Node minter, long time, BigInteger difficulty, PoWGhostBlock uncleA, PoWGhostBlock uncleB) {
-    super(parent, minter, time, difficulty);
+  public PoWGhostBlock(PoWGhostBlock parent, Node minter, long time, BigInteger difficulty, Block uncleA, Block uncleB) {
+    super(parent, minter, time);
+    this.difficulty = difficulty;
     this.uncleA = uncleA;
     this.uncleB = uncleB;
+    if (parent == null) {
+      this.totalDifficulty = BigInteger.ZERO.add(difficulty);
+      this.nextDifficulty = PoWGhostBlock.genesisNextDifficulty;
+    } else {
+      this.totalDifficulty = parent.getTotalDifficulty().add(difficulty);
+      // TODO: difficulty adjustment
+      this.nextDifficulty = parent.getNextDifficulty();
+    }
 
   }
+
+  /**
+   * Gets difficulty.
+   *
+   * @return the difficulty
+   */
+  public BigInteger getDifficulty() {
+    return this.difficulty;
+  }
+
+  /**
+   * Gets total difficulty.
+   *
+   * @return the total difficulty
+   */
+  public BigInteger getTotalDifficulty() {
+    return this.totalDifficulty;
+  }
+
+  /**
+   * Gets next difficulty.
+   *
+   * @return the next difficulty
+   */
+  public BigInteger getNextDifficulty() {
+    return this.nextDifficulty;
+  }
+
   /**
    * Generates the genesis block, gets the total mining power and adjusts the difficulty of the
    * next block accordingly.
@@ -66,5 +108,18 @@ public class PoWGhostBlock extends ProofOfWorkBlock{
     genesisNextDifficulty = BigInteger.valueOf(totalMiningPower * getTargetInterval());
     return new PoWGhostBlock(null, minter, 0, BigInteger.ZERO, null, null);
   }
-
+  /**
+   * Gets the block uncleA.
+   *
+   * @return the uncleA
+   */
+  public Block getUncleA() {    return this.uncleA;  }
+  /**
+   * Gets the block uncleB.
+   *
+   * @return the uncleB
+   */
+  public Block getUncleB() {    return this.uncleB;  }
 }
+
+

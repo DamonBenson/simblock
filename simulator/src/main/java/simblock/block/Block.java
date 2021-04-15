@@ -80,18 +80,14 @@ public class Block {
    *
    * @return the int
    */
-  public int getHeight() {
-    return this.height;
-  }
+  public int getHeight() {    return this.height;  }
 
   /**
    * Get parent block.
    *
    * @return the block
    */
-  public Block getParent() {
-    return this.parent;
-  }
+  public Block getParent() {    return this.parent;  }
 
   /**
    * Get minter node.
@@ -99,9 +95,7 @@ public class Block {
    * @return the node
    */
   @SuppressWarnings("unused")
-  public Node getMinter() {
-    return this.minter;
-  }
+  public Node getMinter() {    return this.minter;  }
 
   /**
    * Get time.
@@ -109,9 +103,7 @@ public class Block {
    * @return the time
    */
   //TODO what format
-  public long getTime() {
-    return this.time;
-  }
+  public long getTime() {    return this.time;  }
 
   /**
    * Gets the block id.
@@ -119,9 +111,7 @@ public class Block {
    * @return the id
    */
   //TODO what format
-  public int getId() {
-    return this.id;
-  }
+  public int getId() {    return this.id;  }
 
   /**
    * Generates the genesis block. The parent is set to null and the time is set to 0

@@ -55,82 +55,82 @@ public class Node {
   /**
    * Unique node ID.
    */
-  private final int nodeID;
+  protected final int nodeID;
 
   /**
    * Region assigned to the node.
    */
-  private final int region;
+  protected final int region;
 
   /**
    * Mining power assigned to the node.
    * Which can Boost by the time minted.
    */
-  private long miningPower;
+  protected long miningPower;
 
   /**
    * Mining power waste in compete.
    */
   // TODO verify
-  private long miningPowerWaste;
+  protected long miningPowerWaste;
 
   /**
    * Coin that the Node has been rewarded.
    */
   // TODO verify
-  private float balance;
+  protected float balance;
 
   /**
    * currentNetConnection, when currentNetConnection boost
    * local host may get overwhelmed
    */
   // TODO verify
-  private int currentNetConnection;
+  protected int currentNetConnection;
 
 
 
   /**
    * A nodes routing table.
    */
-  private AbstractRoutingTable routingTable;
+  protected AbstractRoutingTable routingTable;
 
   /**
    * The consensus algorithm used by the node.
    */
-  private AbstractConsensusAlgo consensusAlgo;
+  protected AbstractConsensusAlgo consensusAlgo;
 
   /**
    * Whether the node uses compact block relay.
    * Hope Mind can't Change,so it's final
    */
-  private final boolean useCBR;
+  protected final boolean useCBR;
 
   /**
    * The node causes churn.
    * Hope Mind can't Change,so it's final
    */
-  private final boolean isChurnNode;
+  protected final boolean isChurnNode;
 
   /**
    * The current block.
    */
-  private Block block;
+  protected Block block;
 
   /**
    * Orphaned blocks known to node.
    */
-  private final Set<Block> orphans = new HashSet<>();
+  protected final Set<Block> orphans = new HashSet<>();
 
   /**
    * The current minting task
    */
-  private AbstractMintingTask mintingTask = null;
+  protected AbstractMintingTask mintingTask = null;
   //******************@Process Status@******************//
   //TODO Node own it's status
   /**
    * time bring trouble.
    */
-  private long AliveTime ;
+  protected long AliveTime ;
   /**
    * @sendingBlock    In the process of sending blocks.
    * @localBusying    In busy with local thread
@@ -138,16 +138,16 @@ public class Node {
    * @crashed         Crashed
    */
   // TODO verify
-  private boolean sendingBlock = false;
-  private boolean localBusying = false;
-  private boolean networkBusying = false;
-  private boolean crashed = false;
+  protected boolean sendingBlock = false;
+  protected boolean localBusying = false;
+  protected boolean networkBusying = false;
+  protected boolean crashed = false;
   //******************@Process Status@******************//
 
   //TODO
-  private final ArrayList<AbstractMessageTask> messageQue = new ArrayList<>();
+  protected final ArrayList<AbstractMessageTask> messageQue = new ArrayList<>();
   // TODO
-  private final Set<Block> downloadingBlocks = new HashSet<>();
+  protected final Set<Block> downloadingBlocks = new HashSet<>();
 
   /**
    * Processing time of tasks expressed in milliseconds.
@@ -155,7 +155,7 @@ public class Node {
    * 3、4 in local busy, rand(300) when network busy ,30000 in crashed.
    */
   // TODO verify
-  private final long processingTime = 2;
+  protected final long processingTime = 2;
 
   /**
    * Instantiates a new Node.
@@ -360,7 +360,7 @@ public class Node {
    *
    * @param newBlock the block to be logged
    */
-  private void printAddBlock(Block newBlock) {
+  protected void printAddBlock(Block newBlock) {
     if(!PRINTADDBLOCK)
       return;
     OUT_JSON_FILE.print("{");
@@ -404,14 +404,6 @@ public class Node {
     if (task != null) {
       putTask(task);
     }
-  }
-
-  /**
-   * Generates a uncle
-   */
-  // getUncle
-  public PoWGhostBlock getUncle() {
-    return new PoWGhostBlock(null,null,0,null,null,null);
   }
 
   /**
@@ -489,7 +481,7 @@ public class Node {
 			if(!sendingBlock){
 				this.sendNextBlockMessage();
 			}
-		}
+    }
 
     if(message instanceof CmpctBlockMessageTask){
 			Block block = ((CmpctBlockMessageTask) message).getBlock();
@@ -503,7 +495,7 @@ public class Node {
 				AbstractMessageTask task = new GetBlockTxnMessageTask(this, from, block);
 				putTask(task);
 			}
-		}
+    }
 
     if (message instanceof BlockMessageTask) {
       Block block = ((BlockMessageTask) message).getBlock();
@@ -516,7 +508,7 @@ public class Node {
   /**
    * Gets block size when the node fails compact block relay.
    */
-  private long getFailedBlockSize(){
+  protected long getFailedBlockSize(){
 		Random random = new Random();
 			if(this.isChurnNode){
 				int index = random.nextInt(CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CHURN_NODE.length);
@@ -525,7 +517,7 @@ public class Node {
 				int index = random.nextInt(CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CONTROL_NODE.length);
 				return (long)(BLOCK_SIZE * CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CONTROL_NODE[index]);
 			}
-	}
+  }
 
   /**
    * Send next block message.

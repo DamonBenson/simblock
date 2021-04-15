@@ -196,15 +196,28 @@ public class Main {
           }
 
           Set<Block> orphans = new HashSet<>();
+
+
           float averageOrphansSize = 0;
           int totalOrphansSize = 0;
           int totalOrphansNum = 0;
+
           // Gather all known orphans
-          for (Node node : getSimulatedNodes()) {
-            orphans.addAll(node.getOrphans());
-            totalOrphansSize += node.getOrphans().size();
+          if(GHOST_USE_MODE) {
+              for (Node node : getSimulatedNodes()) {
+                  orphans.addAll(node.getOrphans());
+                  totalOrphansSize += node.getOrphans().size();
+              }
           }
+          else{
+              for (Node node : getSimulatedNodes()) {
+                  orphans.addAll(node.getOrphans());
+                  totalOrphansSize += node.getOrphans().size();
+              }
+          }
+
           averageOrphansSize = (float)totalOrphansSize / getSimulatedNodes().size();
+
 
           // Record orphans to the list of all known blocks
           blocks.addAll(orphans);

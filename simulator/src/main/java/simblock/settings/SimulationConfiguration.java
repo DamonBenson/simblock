@@ -49,14 +49,15 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 10000;//00;
+  public static final int END_BLOCK_HEIGHT = 100;//00;
   //10k 10000
 
   /**
    * Block size. (unit: byte).
    */
-  public static final long BLOCK_SIZE = 10485760;//535000;//6110;//8000;//535000;//0.5MB
-                                        //10485760 10MB
+  public static final long BLOCK_SIZE = 535000;//535000;//6110;//8000;
+  // 535000;//0.5MB  //10485760 10MB
+
 
   /**
    * The expected value of block generation interval. The difficulty of mining is automatically
@@ -72,7 +73,7 @@ public class SimulationConfiguration {
   /**
    * The consensus algorithm to be used.
    */
-  //TODO not documented in markdown
+  // TODO not documented in markdown
   // TODO return to PoW
   public static final String ALGO = "simblock.node.consensus.ProofOfWork";
   //"simblock.node.consensus.ProofOfWork","simblock.node.consensus.PoWEth"
@@ -109,7 +110,7 @@ public class SimulationConfiguration {
   /**
    * whether use GHOST protocol
    */
-  public static final boolean GHOST_USE_MODE = true; // 0.964f
+  public static final boolean GHOST_USE_MODE = false; // 0.964f
 
   /**
    * The usage rate of compact block relay (CBR) protocol.
