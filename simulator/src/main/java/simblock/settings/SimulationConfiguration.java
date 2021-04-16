@@ -35,7 +35,9 @@ public class SimulationConfiguration {
   public static final boolean VERBOSE = true;
   public static final boolean QUIET = false;
   public static final boolean MEMORYSAVEMODE = true;
-  public static final boolean NOEXTRA = false;
+  public static final boolean NOEXTRA = true;
+  public static final boolean INISITMODE = true;
+
 
   /**
    * The number of nodes participating in the blockchain network.
@@ -49,7 +51,7 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 100;//00;
+  public static final int END_BLOCK_HEIGHT = 1000;//00;
   //10k 10000
 
   /**
@@ -75,7 +77,7 @@ public class SimulationConfiguration {
    */
   // TODO not documented in markdown
   // TODO return to PoW
-//  public static final String ALGO = "simblock.node.consensus.ProofOfWork";
+  //public static final String ALGO = "simblock.node.consensus.ProofOfWork";
   public static final String ALGO = "simblock.node.consensus.PoWEth";
   //"simblock.node.consensus.ProofOfWork","simblock.node.consensus.PoWEth"
 
@@ -111,7 +113,11 @@ public class SimulationConfiguration {
   /**
    * whether use GHOST protocol
    */
-  public static final boolean GHOST_USE_MODE = false; // 0.964f
+  public static final boolean GHOST_USE_MODE = true; // 0.964f
+  /**
+   * The constant INSISTNUM. less mean fast to surrender.
+   */
+  public static final int INSISTNUM = 6;
 
   /**
    * The usage rate of compact block relay (CBR) protocol.

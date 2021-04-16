@@ -133,7 +133,7 @@ public class Block {
   public Block getBlockWithHeight(int height) {
     if (this.height == height) {
       return this;
-    } else {
+    } else {// 父区块
       return this.parent.getBlockWithHeight(height);
     }
   }
@@ -145,12 +145,13 @@ public class Block {
    * @return true if block are on the same chain false otherwise
    */
   public boolean isOnSameChainAs(Block block) {
-    if (block == null) {
+    if (block == null) {//空
       return false;
-    } else if (this.height <= block.height) {
+    } else if (this.height <= block.height) {//非空 该区块超前 //T我过时了 F我的区块被否定了
       return this.equals(block.getBlockWithHeight(this.height));
-    } else {
+    } else {//非空 该区块落后 //T过时   F失败竞争
       return this.getBlockWithHeight(block.height).equals(block);
     }
   }
+
 }

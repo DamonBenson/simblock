@@ -16,14 +16,8 @@
 
 package simblock.node;
 
-import static simblock.settings.SimulationConfiguration.BLOCK_SIZE;
-import static simblock.settings.SimulationConfiguration.CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CHURN_NODE;
-import static simblock.settings.SimulationConfiguration.CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CONTROL_NODE;
-import static simblock.settings.SimulationConfiguration.CBR_FAILURE_RATE_FOR_CHURN_NODE;
-import static simblock.settings.SimulationConfiguration.CBR_FAILURE_RATE_FOR_CONTROL_NODE;
-import static simblock.settings.SimulationConfiguration.COMPACT_BLOCK_SIZE;
+import static simblock.settings.SimulationConfiguration.*;
 import static simblock.simulator.Main.OUT_JSON_FILE;
-import static simblock.settings.SimulationConfiguration.PRINTADDBLOCK;
 import static simblock.simulator.Network.getBandwidth;
 import static simblock.simulator.SimulateRandomEvent.processingTimeExtra;
 import static simblock.simulator.Simulator.arriveBlock;
@@ -199,7 +193,7 @@ public class Node {
     return this.orphans.get(this.orphans.size()-1);
   }
   public GHOSTBlock generateUncleB() {
-    if(this.orphans.isEmpty())
+    if(this.orphans.size()<2)
       return null;
     return this.orphans.get(this.orphans.size()-2);
   }
@@ -366,6 +360,8 @@ public class Node {
     if(this.orphans.isEmpty())
       return;
     this.orphans.remove(block.getUncleA());
+    if(this.orphans.isEmpty())
+      return;
     this.orphans.remove(block.getUncleB());
   }
 
@@ -431,30 +427,131 @@ public class Node {
       putTask(task);
     }
   }
-
+  /**
+   * surrender and fake own block.
+   *
+   * @param block the block
+   */
+  private void surrender(GHOSTBlock block){
+    if (block.getUncleA() != this.block && block.getUncleB() != this.block)// 招安失败
+      return;
+    this.addOrphans(this.block, this.block);
+    // Else add to canonical chain
+    this.addToChain(block);
+    // Generates a new minting task
+    this.minting();
+    // Advertise received block
+    this.sendInv(block);
+  }
+  /**
+   * giveIn and fake own block.
+   *
+   * @param block the block
+   */
+  private void giveIn(GHOSTBlock block){
+    if (block.getUncleA() != this.block && block.getUncleB() != this.block) {// 招安失败
+      this.addOrphans(this.block, block);
+      return;
+    }
+    this.addOrphans(this.block, this.block);
+    acceptBlock(block);
+  }
+  /**
+   * acceptBlock a block.
+   *
+   * @param block the block
+   */
+  private void acceptBlock(GHOSTBlock block){
+    // Else add to canonical chain
+    this.addToChain(block);
+    // Generates a new minting task
+    this.minting();
+    // Advertise received block
+    this.sendInv(block);
+  }
+  /**
+   * Make Node Keep Insisting.
+   *
+   * @param block the block
+   */
+  private void insistBlock(GHOSTBlock block){
+      if (block == null) {//空
+        return;
+      }
+      if (this.block.getHeight() > block.getHeight()) {//过时的区块
+          this.addOrphans(this.block, block);
+      } else if(this.block.getHeight() == block.getHeight()) {//同级竞争
+        if(this.block.equals(block)) {// T共识 F同级竞争
+          // 不存在该状态，这里做个保护
+          return;
+        }
+        else {
+          // 同级不存在招安
+          this.addOrphans(this.block, block);
+        }
+      } else if(this.block.getHeight() >= (block.getHeight() - INSISTNUM)){// 大级坚持
+        if(this.block.equals(block.getBlockWithHeight(this.block.getHeight()))) {// T我过时了,更新 F我的竞争是失败的
+          acceptBlock(block);
+        }
+        else{// 招安
+          giveIn(block);
+        }
+      } else{ //六块放弃
+        surrender(block);
+      }
+    }
   /**
    * Receive block.
    *
    * @param block the block
    */
   public void receiveBlock(GHOSTBlock block) {
-    if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {
-      if (this.block != null && !this.block.isOnSameChainAs(block)) {
-        // If orphan mark orphan
-        this.addOrphans(this.block, block);
+    if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {// 合法块
+
+      if(GHOST_USE_MODE){
+        if (this.block == null) {// 创世块
+          // Else add to canonical chain
+          this.addToChain(block);
+          // Generates a new minting task
+          this.minting();
+          // Advertise received block
+          this.sendInv(block);
+        }
+        else
+          insistBlock(block);
+      } else if(!INISITMODE){
+        if (this.block != null && !this.block.isOnSameChainAs(block)) {// 同链
+            // If orphan mark orphan
+            this.addOrphans(this.block, block);
+        }
+        // Else add to canonical chain
+        this.addToChain(block);
+        // Generates a new minting task
+        this.minting();
+        // Advertise received block
+        this.sendInv(block);
       }
-      // Else add to canonical chain
-      this.addToChain(block);
-      // Generates a new minting task
-      this.minting();
-      // Advertise received block
-      this.sendInv(block);
-    } else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)) {
+      else{
+        if (this.block == null) {// 创世块
+          // Else add to canonical chain
+          this.addToChain(block);
+          // Generates a new minting task
+          this.minting();
+          // Advertise received block
+          this.sendInv(block);
+        }
+        else
+          insistBlock(block);
+      }
+
+    } else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)) {// 如果难度不够变成孤块
+
       // TODO better understand - what if orphan is not valid?
       // If the block was not valid but was an unknown orphan and is not on the same chain as the
       // current block
       this.addOrphans(block, this.block);
       arriveBlock(block, this);
+
     }
   }
 
@@ -473,7 +570,7 @@ public class Node {
           AbstractMessageTask task = new RecMessageTask(this, from, block);
           putTask(task);
           downloadingBlocks.add(block);
-        } else if (!block.isOnSameChainAs(this.block)) {
+        } else if (!block.isOnSameChainAs(this.block)) {// 不同链
           // get new orphan block
 
           AbstractMessageTask task = new RecMessageTask(this, from, block);

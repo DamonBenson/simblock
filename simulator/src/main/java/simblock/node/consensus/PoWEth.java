@@ -50,7 +50,7 @@ public class PoWEth extends AbstractConsensusAlgo {
      */
     @Override
     public boolean isReceivedBlockValid(Block receivedBlock, Block currentBlock) {
-        if (!(receivedBlock instanceof GHOSTBlock)) {
+        if (!(receivedBlock instanceof GHOSTBlock)) {//需要是个正常的块
             return false;
         }
         GHOSTBlock recPoWBlock = (GHOSTBlock) receivedBlock;
@@ -62,10 +62,10 @@ public class PoWEth extends AbstractConsensusAlgo {
         //TODO - dangerous to split due to short circuit operators being used, refactor?
         return (
                 receivedBlockHeight == 0 ||
-                        recPoWBlock.getDifficulty().compareTo(receivedBlockParent.getNextDifficulty()) >= 0
+                        recPoWBlock.getDifficulty().compareTo(receivedBlockParent.getNextDifficulty()) >= 0//新块难度需要合规
         ) && (
                 currentBlock == null ||
-                        recPoWBlock.getTotalDifficulty().compareTo(currPoWBlock.getTotalDifficulty()) > 0
+                        recPoWBlock.getTotalDifficulty().compareTo(currPoWBlock.getTotalDifficulty()) > 0//创世块合法
         );
     }
 
