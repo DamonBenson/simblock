@@ -106,11 +106,20 @@ public class Node {
    * The current block.
    */
   protected GHOSTBlock block;
+  /**
+   * Region assigned to the node.
+   */
+  protected int receiveOrphanCount = 0;
 
   /**
    * Orphaned blocks known to node.
    */
-  private final List<GHOSTBlock> orphans = new ArrayList<>();
+  private final Set<GHOSTBlock> orphans = new HashSet<>();
+  /**
+   * uncleCandidate
+   */
+  private final LinkedList<GHOSTBlock> uncleCandidate = new LinkedList<>();
+
 
 
   /**
@@ -188,14 +197,14 @@ public class Node {
    * Generates a uncle
    */
   public GHOSTBlock generateUncleA() {
-    if(this.orphans.isEmpty())
+    if(this.uncleCandidate.isEmpty())
       return null;
-    return this.orphans.get(this.orphans.size()-1);
+    return this.uncleCandidate.get(this.uncleCandidate.size()-1);
   }
   public GHOSTBlock generateUncleB() {
-    if(this.orphans.size()<2)
+    if(this.uncleCandidate.size()<2)
       return null;
-    return this.orphans.get(this.orphans.size()-2);
+    return this.uncleCandidate.get(this.uncleCandidate.size()-2);
   }
   /**
    * Gets the node id.
@@ -271,8 +280,17 @@ public class Node {
    *
    * @return the orphans
    */
-  public List<GHOSTBlock> getOrphans() {
+  public Set<GHOSTBlock> getOrphans() {
     return this.orphans;
+  }
+
+  /**
+   * Gets all uncleCandidate known to node.
+   *
+   * @return the uncleCandidate
+   */
+  public LinkedList<GHOSTBlock> getUncleCandidate() {
+    return this.uncleCandidate;
   }
 
   /**
@@ -357,12 +375,12 @@ public class Node {
     printAddBlock(newBlock);
     // Observe and handle new block arrival
     arriveBlock(newBlock, this);
-    if(this.orphans.isEmpty())
+    if(this.uncleCandidate.isEmpty())
       return;
-    this.orphans.remove(block.getUncleA());
-    if(this.orphans.isEmpty())
+    this.uncleCandidate.remove(block.getUncleA());
+    if(this.uncleCandidate.isEmpty())
       return;
-    this.orphans.remove(block.getUncleB());
+    this.uncleCandidate.remove(block.getUncleB());
   }
 
   /**
@@ -383,23 +401,99 @@ public class Node {
     OUT_JSON_FILE.print("},");
     OUT_JSON_FILE.flush();
   }
+  /**
+   * to figure out why LinkedList can't like set
+   * TODO
+   */
+  public boolean checkUncleCandidate() {
+    for(int checkIndex = uncleCandidate.size()-1 ; checkIndex > -1 ; checkIndex--){
+      for(int index = uncleCandidate.size()-1 ; index > -1 ; index--){
+        if(uncleCandidate.get(checkIndex).equals(uncleCandidate.get(index))){
+          return true;
+        }
+      }
+    }
+    return false;
+    // eg
+    //    if(checkUncleCandidate()){
+    //      System.out.println("Error checkUncleCandidate IS TRUE");
+    //    }
+  }
+
+  /**
+   * nominate Uncle Candidates
+   */
+  public void nominateUncleCandidate(GHOSTBlock orphanBlock, GHOSTBlock validBlock) {
+    // TODO 7 Height to
+//    if(MEMORYSAVEMODE) {
+//      while (uncleCandidate.size() > 15) {
+//        uncleCandidate.getFirst();
+//      }
+//    }
+    int IndexMax = uncleCandidate.size() - 1;
+    int selectedIndex = IndexMax;
+
+    if(IndexMax == -1){
+      uncleCandidate.add(orphanBlock);
+      return;// 完成推举了
+    } else{
+      //最长的最先，先来的先招安
+      while(selectedIndex >= 0){
+        //找到高度
+        if(uncleCandidate.get(selectedIndex).getHeight() <= orphanBlock.getHeight()) {//孤块高度
+          break;
+        }
+        selectedIndex -- ;
+      }
+
+      if(selectedIndex == IndexMax){//最长
+        if(uncleCandidate.get(selectedIndex).equals(orphanBlock)) {
+          return;// 已经推举了
+        }
+        uncleCandidate.add(orphanBlock);
+        return;// 完成推举了
+      }
+
+      while(selectedIndex >= 0){
+        // 找到位置插入
+        if(uncleCandidate.get(selectedIndex).equals(orphanBlock)){
+          return;// 已经推举了
+        }
+        if(uncleCandidate.get(selectedIndex).getHeight() < orphanBlock.getHeight()){
+          uncleCandidate.add(selectedIndex + 1,orphanBlock);
+          return;// 完成推举了
+        }
+        selectedIndex -- ;
+      }
+      uncleCandidate.add(0,orphanBlock);
+    }
+
+    System.out.println(uncleCandidate.getLast().getHeight() + "\"HEIGHT\":" + uncleCandidate.getFirst().getHeight());
+
+  }
 
   /**
    * Add orphans.
    *
-   * @param orphanBlock the orphan block
-   * @param validBlock  the valid block
+   * @param orphanBlock the orphan block  作为孤块
+   * @param validBlock  the valid block   作为合法块
    */
   //TODO check this out later
   public void addOrphans(GHOSTBlock orphanBlock, GHOSTBlock validBlock) {
     if (orphanBlock != validBlock) {
+      // TODO Abandon Design
+      // receiveOrphanCount += 1;
+
       this.orphans.add(orphanBlock);
       this.orphans.remove(validBlock);
-      if (validBlock == null || orphanBlock.getHeight() > validBlock.getHeight()) {
-        this.addOrphans(orphanBlock.getParent(), validBlock);
+
+      nominateUncleCandidate(orphanBlock,validBlock);
+
+      if (validBlock == null || orphanBlock.getHeight() > validBlock.getHeight()) {//
+        this.addOrphans(orphanBlock.getParent(), validBlock); // 发现分叉
       } else if (orphanBlock.getHeight() == validBlock.getHeight()) {
-        this.addOrphans(orphanBlock.getParent(), validBlock.getParent());
-      } else {
+        this.addOrphans(orphanBlock.getParent(), validBlock.getParent()); // 发现竞争分叉
+      } else {//合法链更长 开始承认合法链
         this.addOrphans(orphanBlock, validBlock.getParent());
       }
     }

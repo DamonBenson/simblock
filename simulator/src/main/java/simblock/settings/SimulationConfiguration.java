@@ -32,6 +32,7 @@ public class SimulationConfiguration {
   public static final boolean PRINTOUT = false;
   public static final boolean PRINTADDBLOCK = false;
   public static final boolean PRINTGRAPH = false;
+  public static final boolean ANALYSEWHOLEPROPAGATION = false;
   public static final boolean VERBOSE = true;
   public static final boolean QUIET = false;
   public static final boolean MEMORYSAVEMODE = true;
@@ -69,7 +70,7 @@ public class SimulationConfiguration {
    * The expected value of block generation interval. The difficulty of mining is automatically
    * adjusted by this value and the sum of mining power. (unit: millisecond)
    */
-  public static final long INTERVAL = 1000 * 60 ;//1000*60;//1000*30*5;//1000*60*10;
+  public static final long INTERVAL = 1000 * 15 ;//1000*60;//1000*30*5;//1000*60*10;
 
   /**
    * The kind of routing table.
@@ -126,7 +127,7 @@ public class SimulationConfiguration {
   /**
    * The usage rate of compact block relay (CBR) protocol.
    */
-  public static final float CBR_USAGE_RATE = 1.0f; // 0.964f
+  public static final float CBR_USAGE_RATE = 0f; // 0.964f
   /**
    * The rate of nodes that cause churn.
    */

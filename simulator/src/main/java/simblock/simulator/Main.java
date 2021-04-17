@@ -111,205 +111,224 @@ public class Main {
      * @param args the input arguments
      */
     public static void main(String[] args) {
-        while(SimulationEpoch <= TotalSimulationEpoch){
-            long start = System.currentTimeMillis();
-            long startStamp = getCurrentTime();
-            System.out.println("The " + SimulationEpoch + " Epoch finished,start timestamp:"+startStamp);
+      while(SimulationEpoch <= TotalSimulationEpoch){
+        long start = System.currentTimeMillis();
+        long startStamp = getCurrentTime();
+        System.out.println("The " + SimulationEpoch + " Epoch finished,start timestamp:"+startStamp);
 
-            try {
-                OUT_JSON_FILE = new PrintWriter(
-                        new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
-                STATIC_JSON_FILE = new PrintWriter(
-                        new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
-                CUSTOM_TEXT_FILE = new PrintWriter(
-                        new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
-                PROPAGATION_TEXT_FILE = new PrintWriter(
-                        new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./propagation%d.txt",SimulationEpoch))))));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            printNetProtocolSetting();
-            setTargetInterval(INTERVAL);
+        try {
+            OUT_JSON_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
+            STATIC_JSON_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
+            CUSTOM_TEXT_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
+            PROPAGATION_TEXT_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./propagation%d.txt",SimulationEpoch))))));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        printNetProtocolSetting();
+        setTargetInterval(INTERVAL);
 
-            //start json format
-            OUT_JSON_FILE.print("[");
-            OUT_JSON_FILE.flush();
+        //start json format
+        OUT_JSON_FILE.print("[");
+        OUT_JSON_FILE.flush();
 
-            // Log regions
-            printRegion();
+        // Log regions
+        printRegion();
 
-            // Setup network
-            constructNetworkWithAllNodes(NUM_OF_NODES);
+        // Setup network
+        constructNetworkWithAllNodes(NUM_OF_NODES);
 
-            // Initial block height, we stop at END_BLOCK_HEIGHT
-            int currentBlockHeight = 1;
-            boolean IsMaxChain = false;
+        // Initial block height, we stop at END_BLOCK_HEIGHT
+        int currentBlockHeight = 1;
+        boolean IsMaxChain = false;
 
-            // Iterate over tasks and handle
-            while (getTask() != null) {
-                if (getTask() instanceof AbstractMintingTask) {
-                    AbstractMintingTask task = (AbstractMintingTask) getTask();
-                    if (task.getParent().getHeight() == currentBlockHeight) {
-                        currentBlockHeight++;
-                    }
-                    if (currentBlockHeight > END_BLOCK_HEIGHT) {
-                        break;
-                    }
-                    // |Log| every 100 blocks and at the second block
-                    // TODO use constants here
-                    if (QUIET){
-                        continue;
-                    }
-                    IsMaxChain = ((task.getParent().getHeight() + 1) == currentBlockHeight);
-                    if (VERBOSE){
+        // Iterate over tasks and handle
+        while (getTask() != null) {
+            if (getTask() instanceof AbstractMintingTask) {
+                AbstractMintingTask task = (AbstractMintingTask) getTask();
+                if (task.getParent().getHeight() == currentBlockHeight) {
+                    currentBlockHeight++;
+                }
+                if (currentBlockHeight > END_BLOCK_HEIGHT) {
+                    break;
+                }
+                // |Log| every 100 blocks and at the second block
+                // TODO use constants here
+                if (QUIET){
+                    continue;
+                }
+                IsMaxChain = ((task.getParent().getHeight() + 1) == currentBlockHeight);
+                if (VERBOSE){
+                    System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
+                }
+                else {
+                    if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
+                        writeGraph(currentBlockHeight);
                         System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
                     }
-                    else {
-                        if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
-                            writeGraph(currentBlockHeight);
-                            System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
-                        }
-                    }
-
                 }
-                // Execute task
-                runTask();
+
             }
+            // Execute task
+            runTask();
+        }
 
-            //TODO logger
-            System.out.println();
+        //TODO logger
+        System.out.println();
 
-            Set<Block> blocks = new HashSet<>();
+        Set<Block> blocks = new HashSet<>();
 
-            // Get the latest block from the first simulated node
-            Block block = getSimulatedNodes().get(0).getBlock();
+        // Get the latest block from the first simulated node
+        Block block = getSimulatedNodes().get(0).getBlock();
 
-            //Update the list of known blocks by adding the parents of the aforementioned block
-            while (block.getParent() != null) {
-                blocks.add(block);
-                block = block.getParent();
-            }
+        //Update the list of known blocks by adding the parents of the aforementioned block
+        while (block.getParent() != null) {
+            blocks.add(block);
+            block = block.getParent();
+        }
 
-            Set<Block> orphans = new HashSet<>();
-
-
-            float averageOrphansSize;
-            int totalOrphansSize = 0;
-            int totalOrphansNum = 0;
-
-            // Gather all known orphans
-            for (Node node : getSimulatedNodes()) {
-                orphans.addAll(node.getOrphans());
-                totalOrphansSize += node.getOrphans().size();
-            }
+        Set<Block> orphans = new HashSet<>();
 
 
-            averageOrphansSize = (float)totalOrphansSize / getSimulatedNodes().size();
+        float averageOrphansSize;
+        int totalOrphansSize = 0;
+        int totalOrphansNum = 0;
+
+        // Gather all known orphans
+        for (Node node : getSimulatedNodes()) {
+            orphans.addAll(node.getOrphans());
+        }
+        totalOrphansSize = orphans.size();
 
 
-            // Record orphans to the list of all known blocks
-            blocks.addAll(orphans);
+        averageOrphansSize = (float)totalOrphansSize / getSimulatedNodes().size();
 
-            ArrayList<Block> blockList = new ArrayList<>(blocks);
+        int selOrphansSize;
+        int selUncleCandidateSize;
+        selOrphansSize = getSimulatedNodes().get(0).getOrphans().size();
+        selUncleCandidateSize = getSimulatedNodes().get(0).getUncleCandidate().size();
 
-            //Sort the blocks first by time, then by hash code
-            blockList.sort((a, b) -> {
-                int order = Long.signum(a.getTime() - b.getTime());
-                if (order != 0) {
-                    return order;
-                }
-                order = System.identityHashCode(a) - System.identityHashCode(b);
+        // Record orphans to the list of all known blocks
+        blocks.addAll(orphans);
+
+        ArrayList<Block> blockList = new ArrayList<>(blocks);
+
+        //Sort the blocks first by time, then by hash code
+        blockList.sort((a, b) -> {
+            int order = Long.signum(a.getTime() - b.getTime());
+            if (order != 0) {
                 return order;
-            });
-
-            //Log all orphans
-            // TODO move to method and use logger
-            for (Block orphan : orphans) {
-                totalOrphansNum += 1;
-                try {
-                    CUSTOM_TEXT_FILE.print(orphan + "|Height:" + orphan.getHeight() + "|Minter:" + orphan.getMinter() + '\n');
-                    CUSTOM_TEXT_FILE.flush();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             }
+            order = System.identityHashCode(a) - System.identityHashCode(b);
+            return order;
+        });
 
-            //Log all Fork
-          /*
-          Log in format:
-          ＜fork_information, block height, block ID＞
-          fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
-          "Orphan" denote block is an orphan block.
-          */
-            // TODO move to method and use logger
+        //Log all orphans
+        // TODO move to method and use logger
+        for (Block orphan : orphans) {
+            totalOrphansNum += 1;
             try {
-
-                FileWriter fw = new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./blockList%d.txt",SimulationEpoch))), false);
-                PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
-
-                for (Block b : blockList) {
-                    if (!orphans.contains(b)) {
-                        pw.println("OnChain : " + b.getHeight() + " |Identity: " + b + "|PropagationTime: " + (b.propagationFinished - b.getTime()));
-                    } else {
-                        pw.println("Orphan : " + b.getHeight() + " |Identity: " + b + "|CompeteTime: " + (b.propagationFinished - b.getTime()));
-                    }
-                }
-                pw.close();
-
-            } catch (IOException ex) {
-                ex.printStackTrace();
+                CUSTOM_TEXT_FILE.print(orphan + "|Height:" + orphan.getHeight() + "|Minter:" + orphan.getMinter() + '\n');
+                CUSTOM_TEXT_FILE.flush();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+        }
+        for (Block orphan : orphans) {
+          totalOrphansNum += 1;
+          try {
+            CUSTOM_TEXT_FILE.print(orphan + "|Height:" + orphan.getHeight() + "|Minter:" + orphan.getMinter() + '\n');
+            CUSTOM_TEXT_FILE.flush();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
 
-            // Print propagation information about all blocks
+        //Log all Fork
+      /*
+      Log in format:
+      ＜fork_information, block height, block ID＞
+      fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
+      "Orphan" denote block is an orphan block.
+      */
+        // TODO move to method and use logger
+        try {
+
+            FileWriter fw = new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./blockList%d.txt",SimulationEpoch))), false);
+            PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
+
+            for (Block b : blockList) {
+                if (!orphans.contains(b)) {
+                    pw.println("OnChain : " + b.getHeight() + " |Identity: " + b + "|PropagationTime: " + (b.propagationFinished - b.getTime()));
+                } else {
+                    pw.println("Orphan : " + b.getHeight() + " |Identity: " + b + "|CompeteTime: " + (b.propagationFinished - b.getTime()));
+                }
+            }
+            pw.close();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        // Print propagation information about all blocks
 //           printAllPropagation(blockList, orphans);
 
-            long end = System.currentTimeMillis();
-            long endStamp = getCurrentTime();
-            simulationTime = end - start;
-            simulationStamp = endStamp - startStamp;
+        long end = System.currentTimeMillis();
+        long endStamp = getCurrentTime();
+        simulationTime = end - start;
+        simulationStamp = endStamp - startStamp;
 
-            // log
-            OUT_JSON_FILE.print("{");
-            OUT_JSON_FILE.print("\"kind\":\"simulation-end\",");
-            OUT_JSON_FILE.print("\"content\":{");
-            OUT_JSON_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
-            OUT_JSON_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
-            OUT_JSON_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
-            OUT_JSON_FILE.print("\"timestamp\":" + getCurrentTime());
-            OUT_JSON_FILE.print("}");
-            OUT_JSON_FILE.print("}");
-            OUT_JSON_FILE.print("]");
-            OUT_JSON_FILE.close();
-            // end json format
-            CUSTOM_TEXT_FILE.print("{");
-            CUSTOM_TEXT_FILE.print("\"kind\":\"simulation-end\",");
-            CUSTOM_TEXT_FILE.print("\"content\":{");
-            CUSTOM_TEXT_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
-            CUSTOM_TEXT_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
-            CUSTOM_TEXT_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
-            CUSTOM_TEXT_FILE.print("\"timestamp\":" + getCurrentTime());
-            CUSTOM_TEXT_FILE.print("\"simulationStamp\":" + simulationStamp);
-            CUSTOM_TEXT_FILE.print("}");
-            CUSTOM_TEXT_FILE.print("}");
-            CUSTOM_TEXT_FILE.print("]");
-            CUSTOM_TEXT_FILE.close();
-            PROPAGATION_TEXT_FILE.close();
-            // end json format
-            // Log simulation time in milliseconds
-            System.out.println(simulationTime);
-            System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
-            System.out.println("\"totalOrphansSize\":" + totalOrphansSize);
-            System.out.println("\"totalOrphansNum\":" + totalOrphansNum);
-            System.out.println("\"timestamp\":" + getCurrentTime());
-            System.out.println("\"simulationStamp\":" + simulationStamp);
-            System.out.println("The " + SimulationEpoch + " Epoch finished,simulation Time:" + (simulationTime/1000)
-                    + " simulation Stamp:" + simulationStamp
-                    + " simulation Stamp Minutes:" + simulationStamp/(1000*60));
-            resetTask();
-            clearNode();//For multiEpoch
-            SimulationEpoch ++;
+        // log
+        OUT_JSON_FILE.print("{");
+        OUT_JSON_FILE.print("\"kind\":\"simulation-end\",");
+        OUT_JSON_FILE.print("\"content\":{");
+        OUT_JSON_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
+        OUT_JSON_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
+        OUT_JSON_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
+        OUT_JSON_FILE.print("\"selOrphansSize\":" + selOrphansSize);
+        OUT_JSON_FILE.print("\"selUncleCandidateSize\":" + selUncleCandidateSize);
+        OUT_JSON_FILE.print("\"timestamp\":" + getCurrentTime());
+        OUT_JSON_FILE.print("}");
+        OUT_JSON_FILE.print("}");
+        OUT_JSON_FILE.print("]");
+        OUT_JSON_FILE.close();
+        // end json format
+        CUSTOM_TEXT_FILE.print("{");
+        CUSTOM_TEXT_FILE.print("\"kind\":\"simulation-end\",");
+        CUSTOM_TEXT_FILE.print("\"content\":{");
+        CUSTOM_TEXT_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
+        CUSTOM_TEXT_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
+        CUSTOM_TEXT_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
+        CUSTOM_TEXT_FILE.print("\"selOrphansSize\":" + selOrphansSize);
+        CUSTOM_TEXT_FILE.print("\"selUncleCandidateSize\":" + selUncleCandidateSize);
+        CUSTOM_TEXT_FILE.print("\"timestamp\":" + getCurrentTime());
+        CUSTOM_TEXT_FILE.print("\"simulationStamp\":" + simulationStamp);
+        CUSTOM_TEXT_FILE.print("}");
+        CUSTOM_TEXT_FILE.print("}");
+        CUSTOM_TEXT_FILE.print("]");
+        CUSTOM_TEXT_FILE.close();
+        PROPAGATION_TEXT_FILE.close();
+        // end json format
+        // Log simulation time in milliseconds
+        System.out.println(simulationTime);
+        System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
+        System.out.println("\"totalOrphansSize\":" + totalOrphansSize);
+        System.out.println("\"totalOrphansNum\":" + totalOrphansNum);
+        System.out.print("\"selOrphansSize\":" + selOrphansSize);
+        System.out.print("\"selUncleCandidateSize\":" + selUncleCandidateSize);
+        System.out.println("\"timestamp\":" + getCurrentTime());
+        System.out.println("\"simulationStamp\":" + simulationStamp);
+        System.out.println("The " + SimulationEpoch + " Epoch finished,simulation Time:" + (simulationTime/1000)
+                + " simulation Stamp:" + simulationStamp
+                + " simulation Stamp Minutes:" + simulationStamp/(1000*60));
+        resetTask();
+        clearNode();//For multiEpoch
+        SimulationEpoch ++;
 
-        }
+      }
     }
 
 

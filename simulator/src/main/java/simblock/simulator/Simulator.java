@@ -187,13 +187,16 @@ public class Simulator {
    *                    propagation times
    */
   public static void printPropagation(Block block, LinkedHashMap<Integer, Long> propagation) {
+    if(!ANALYSEWHOLEPROPAGATION)
+      return;
     // Print block and its height
+    // PROPAGATION_TEXT_FILE.print(block + ":" + block.getHeight() + '\n');
+
     // TODO block does not have a toString method, what is printed here
-    //    PROPAGATION_TEXT_FILE.print(block + ":" + block.getHeight() + '\n');
     for (Map.Entry<Integer, Long> timeEntry : propagation.entrySet()) {
       PROPAGATION_TEXT_FILE.print(timeEntry.getKey() + "," + timeEntry.getValue() + '\n');
     }
-    //    PROPAGATION_TEXT_FILE.print('\n');
+    // PROPAGATION_TEXT_FILE.print('\n');
     PROPAGATION_TEXT_FILE.flush();
 
   }
