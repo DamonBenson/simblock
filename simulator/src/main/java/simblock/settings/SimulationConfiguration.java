@@ -35,8 +35,12 @@ public class SimulationConfiguration {
   public static final boolean VERBOSE = true;
   public static final boolean QUIET = false;
   public static final boolean MEMORYSAVEMODE = true;
-  public static final boolean NOEXTRA = true;
+  public static final boolean NOBANDWITTHREDUCTION = true;//true as default,not random crash
+  public static final boolean NOEXTRA = true;//true as default,not random crash
   public static final boolean INISITMODE = true;
+  public static final boolean GIVEINNOTCOMPLAIN = true;
+  public static final boolean INSITNOTPROUD = true;
+
 
 
   /**
@@ -51,10 +55,10 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 1000;//00;
+  public static final int END_BLOCK_HEIGHT = 10000;//00;
   //10k 10000
 
-  /**
+  /**0
    * Block size. (unit: byte).
    */
   public static final long BLOCK_SIZE = 535000;//535000;//6110;//8000;
@@ -65,7 +69,7 @@ public class SimulationConfiguration {
    * The expected value of block generation interval. The difficulty of mining is automatically
    * adjusted by this value and the sum of mining power. (unit: millisecond)
    */
-  public static final long INTERVAL = 1000 * 60 *10 ;//1000*60;//1000*30*5;//1000*60*10;
+  public static final long INTERVAL = 1000 * 60 ;//1000*60;//1000*30*5;//1000*60*10;
 
   /**
    * The kind of routing table.

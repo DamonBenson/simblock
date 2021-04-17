@@ -188,12 +188,12 @@ public class Simulator {
    */
   public static void printPropagation(Block block, LinkedHashMap<Integer, Long> propagation) {
     // Print block and its height
-    //TODO block does not have a toString method, what is printed here
-//    PROPAGATION_TEXT_FILE.print(block + ":" + block.getHeight() + '\n');
+    // TODO block does not have a toString method, what is printed here
+    //    PROPAGATION_TEXT_FILE.print(block + ":" + block.getHeight() + '\n');
     for (Map.Entry<Integer, Long> timeEntry : propagation.entrySet()) {
       PROPAGATION_TEXT_FILE.print(timeEntry.getKey() + "," + timeEntry.getValue() + '\n');
     }
-//    PROPAGATION_TEXT_FILE.print('\n');
+    //    PROPAGATION_TEXT_FILE.print('\n');
     PROPAGATION_TEXT_FILE.flush();
 
   }
@@ -207,7 +207,10 @@ public class Simulator {
     STATIC_JSON_FILE.print("\"NUM_OF_NODES\":" + NUM_OF_NODES + ",\n");
     STATIC_JSON_FILE.print("\"END_BLOCK_HEIGHT\":" + END_BLOCK_HEIGHT + ",\n");
     STATIC_JSON_FILE.print("\"BLOCK_SIZE\":" + BLOCK_SIZE + ",\n");
+    STATIC_JSON_FILE.print("\"NOBANDWITTHREDUCTION\":" + NOBANDWITTHREDUCTION + ",\n");
     STATIC_JSON_FILE.print("\"NOEXTRA\":" + NOEXTRA + ",\n");
+    STATIC_JSON_FILE.print("\"INISITMODE\":" + INISITMODE + ",\n");
+    STATIC_JSON_FILE.print("\"ALGO\":" + ALGO + ",\n");
     STATIC_JSON_FILE.print("\"INTERVAL\":" + INTERVAL + ",\n");
     STATIC_JSON_FILE.print("\"CBR_USAGE_RATE\":" + CBR_USAGE_RATE + ",\n");
     STATIC_JSON_FILE.print("\"CHURN_NODE_RATE\":" + CHURN_NODE_RATE + ",\n");
@@ -220,7 +223,7 @@ public class Simulator {
 
   /**
    * Print propagation information about all blocks, internally relying on
-   * {@link SimulatorGHOST#printPropagation(Block, LinkedHashMap)}.
+   * {@link Simulator#printPropagation(Block, LinkedHashMap)}.
    */
   public static void printAllPropagation(ArrayList<Block> blockList, Set<Block> orphans) {
     PROPAGATION_TEXT_FILE.print("printAllPropagation\n");

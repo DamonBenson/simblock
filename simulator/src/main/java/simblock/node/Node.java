@@ -433,15 +433,17 @@ public class Node {
    * @param block the block
    */
   private void surrender(GHOSTBlock block){
-    if (block.getUncleA() != this.block && block.getUncleB() != this.block)// 招安失败
+    if (block.getUncleA() == this.block && block.getUncleB() == this.block) {// 招安成功
+      System.out.println("Thanks,I give in" + "\tcurrentBlockHeight:" + block.getHeight() + "\tMineBlockHeight:" + this.block.getHeight());
+
+      this.addOrphans(this.block, this.block);
+      acceptBlock(block);
       return;
+    }
+    System.out.println("Yes,I surrender" + "\tcurrentBlockHeight:" + block.getHeight() + "\tMineBlockHeight:" + this.block.getHeight());
+
     this.addOrphans(this.block, this.block);
-    // Else add to canonical chain
-    this.addToChain(block);
-    // Generates a new minting task
-    this.minting();
-    // Advertise received block
-    this.sendInv(block);
+    acceptBlock(block);
   }
   /**
    * giveIn and fake own block.
@@ -450,11 +452,18 @@ public class Node {
    */
   private void giveIn(GHOSTBlock block){
     if (block.getUncleA() != this.block && block.getUncleB() != this.block) {// 招安失败
+      if(!INSITNOTPROUD)
+        System.out.println("NOT!!!I wanna not give up" + "\tcurrentBlockHeight:" + block.getHeight() + "\tMineBlockHeight:" + this.block.getHeight());
       this.addOrphans(this.block, block);
+
       return;
     }
+    if(!GIVEINNOTCOMPLAIN)
+      System.out.println("All right,I give in" + "\tcurrentBlockHeight:" + block.getHeight() + "\tMineBlockHeight:" + this.block.getHeight());
     this.addOrphans(this.block, this.block);
     acceptBlock(block);
+
+
   }
   /**
    * acceptBlock a block.
@@ -478,9 +487,12 @@ public class Node {
       if (block == null) {//空
         return;
       }
-      if (this.block.getHeight() > block.getHeight()) {//过时的区块
+      if (this.block.getHeight() > block.getHeight()) {
+          //过时的区块
           this.addOrphans(this.block, block);
-      } else if(this.block.getHeight() == block.getHeight()) {//同级竞争
+
+      } else if(this.block.getHeight() == block.getHeight()) {
+        //同级竞争
         if(this.block.equals(block)) {// T共识 F同级竞争
           // 不存在该状态，这里做个保护
           return;
@@ -489,15 +501,20 @@ public class Node {
           // 同级不存在招安
           this.addOrphans(this.block, block);
         }
-      } else if(this.block.getHeight() >= (block.getHeight() - INSISTNUM)){// 大级坚持
+
+      } else if(this.block.getHeight() > (block.getHeight() - INSISTNUM)){
+        // 大级坚持
         if(this.block.equals(block.getBlockWithHeight(this.block.getHeight()))) {// T我过时了,更新 F我的竞争是失败的
           acceptBlock(block);
         }
         else{// 招安
           giveIn(block);
         }
-      } else{ //六块放弃
+
+      } else{
+        //六块放弃
         surrender(block);
+
       }
     }
   /**
@@ -509,6 +526,15 @@ public class Node {
     if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {// 合法块
 
       if(GHOST_USE_MODE){
+
+        if (this.block == null) {// 创世块
+          acceptBlock(block);
+        }
+        else
+          insistBlock(block);
+
+      } else if(INISITMODE){
+
         if (this.block == null) {// 创世块
           // Else add to canonical chain
           this.addToChain(block);
@@ -519,10 +545,13 @@ public class Node {
         }
         else
           insistBlock(block);
-      } else if(!INISITMODE){
+
+      }
+      else{
+
         if (this.block != null && !this.block.isOnSameChainAs(block)) {// 同链
-            // If orphan mark orphan
-            this.addOrphans(this.block, block);
+          // If orphan mark orphan
+          this.addOrphans(this.block, block);
         }
         // Else add to canonical chain
         this.addToChain(block);
@@ -530,18 +559,7 @@ public class Node {
         this.minting();
         // Advertise received block
         this.sendInv(block);
-      }
-      else{
-        if (this.block == null) {// 创世块
-          // Else add to canonical chain
-          this.addToChain(block);
-          // Generates a new minting task
-          this.minting();
-          // Advertise received block
-          this.sendInv(block);
-        }
-        else
-          insistBlock(block);
+
       }
 
     } else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)) {// 如果难度不够变成孤块

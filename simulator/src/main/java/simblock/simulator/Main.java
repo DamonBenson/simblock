@@ -55,7 +55,7 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 1;
+    public static final long TotalSimulationEpoch = 5;
     /**
      * The initial simulation time.
      */
@@ -143,6 +143,7 @@ public class Main {
 
             // Initial block height, we stop at END_BLOCK_HEIGHT
             int currentBlockHeight = 1;
+            boolean IsMaxChain = false;
 
             // Iterate over tasks and handle
             while (getTask() != null) {
@@ -159,14 +160,17 @@ public class Main {
                     if (QUIET){
                         continue;
                     }
-
+                    IsMaxChain = ((task.getParent().getHeight() + 1) == currentBlockHeight);
                     if (VERBOSE){
-                        System.out.println(currentBlockHeight);
+                        System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
                     }
-                    if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
-                        writeGraph(currentBlockHeight);
-                        System.out.println(currentBlockHeight);
+                    else {
+                        if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
+                            writeGraph(currentBlockHeight);
+                            System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
+                        }
                     }
+
                 }
                 // Execute task
                 runTask();
