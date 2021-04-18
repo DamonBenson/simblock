@@ -55,7 +55,7 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 5;
+    public static final long TotalSimulationEpoch = 1;
     /**
      * The initial simulation time.
      */

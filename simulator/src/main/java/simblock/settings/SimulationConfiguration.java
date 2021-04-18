@@ -56,7 +56,7 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 10000;//00;
+  public static final int END_BLOCK_HEIGHT = 500;//00;
   //10k 10000
 
   /**0

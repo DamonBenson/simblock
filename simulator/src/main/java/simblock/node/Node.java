@@ -377,10 +377,10 @@ public class Node {
     arriveBlock(newBlock, this);
     if(this.uncleCandidate.isEmpty())
       return;
-    this.uncleCandidate.remove(block.getUncleA());
+    this.uncleCandidate.remove(newBlock.getUncleA());
     if(this.uncleCandidate.isEmpty())
       return;
-    this.uncleCandidate.remove(block.getUncleB());
+    this.uncleCandidate.remove(newBlock.getUncleB());
   }
 
   /**
@@ -424,7 +424,7 @@ public class Node {
    * nominate Uncle Candidates
    */
   public void nominateUncleCandidate(GHOSTBlock orphanBlock, GHOSTBlock validBlock) {
-    // TODO 7 Height to
+    // TODO 7 Height to deNominate
 //    if(MEMORYSAVEMODE) {
 //      while (uncleCandidate.size() > 15) {
 //        uncleCandidate.getFirst();
@@ -618,45 +618,47 @@ public class Node {
    */
   public void receiveBlock(GHOSTBlock block) {
     if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {// 合法块
+      if (this.block == null) {// 创世块
+        acceptBlock(block);
+        return;
+      }
+      if(GHOST_USE_MODE||INISITMODE){
 
-      if(GHOST_USE_MODE){
-
-        if (this.block == null) {// 创世块
+        if (!this.block.isOnSameChainAs(block)) {// 不同链则丢弃自己的区块，接受新链，
+          insistBlock(block);// 接受新链时会坚持自我
+          return;
+        }else if(this.block.getHeight() >= block.getHeight()) {// 同链的旧区块不要(保护)
+          arriveBlock(block, this);
+        }else{// 同链的新区块接受
           acceptBlock(block);
         }
-        else
-          insistBlock(block);
 
-      } else if(INISITMODE){
+      } else{// 正常：最长链共识
 
-        if (this.block == null) {// 创世块
-          // Else add to canonical chain
-          this.addToChain(block);
-          // Generates a new minting task
-          this.minting();
-          // Advertise received block
-          this.sendInv(block);
-        }
-        else
-          insistBlock(block);
-
-      }
-      else{
-
-        if (this.block != null && !this.block.isOnSameChainAs(block)) {// 同链
+        if (!this.block.isOnSameChainAs(block)) {// 不同链则丢弃自己的区块，接受新链，
           // If orphan mark orphan
           this.addOrphans(this.block, block);
+          acceptBlock(block);
+        }else if(this.block.getHeight() >= block.getHeight()){// 同链的旧区块不要(保护)
+          arriveBlock(block, this);
+        }else{// 同链的新区块接受
+          acceptBlock(block);
         }
-        // Else add to canonical chain
-        this.addToChain(block);
-        // Generates a new minting task
-        this.minting();
-        // Advertise received block
-        this.sendInv(block);
 
       }
+      // TODO 原版的代码存在冒险 旧区块居然会接收？  似乎是旧区块不会再次中继
+//      if (this.block != null && !this.block.isOnSameChainAs(block)) {//不同链 标记孤块 接受区块
+//        // If orphan mark orphan
+//        this.addOrphans(this.block, block);
+//      }
+//      // Else add to canonical chain
+//      this.addToChain(block);
+//      // Generates a new minting task
+//      this.minting();
+//      // Advertise received block
+//      this.sendInv(block);
 
-    } else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)) {// 如果难度不够变成孤块
+    } else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)) {// 如果难度不够变成孤块  注册未登记的孤块
 
       // TODO better understand - what if orphan is not valid?
       // If the block was not valid but was an unknown orphan and is not on the same chain as the
@@ -677,14 +679,15 @@ public class Node {
 
     if (message instanceof InvMessageTask) {
       GHOSTBlock block = ((InvMessageTask) message).getBlock();
-      if (!this.orphans.contains(block) && !this.downloadingBlocks.contains(block)) {
-        if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {
-          AbstractMessageTask task = new RecMessageTask(this, from, block);
-          putTask(task);
-          downloadingBlocks.add(block);
-        } else if (!block.isOnSameChainAs(this.block)) {// 不同链
+      if (!this.orphans.contains(block) && !this.downloadingBlocks.contains(block)) {// 孤块里没有区块且没在下载 则开始下载
+        if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {// 合法块
+          if(this.block == null||block.getHeight() > this.block.getHeight()) {// 合法的话必须得是新的才下载
+            AbstractMessageTask task = new RecMessageTask(this, from, block);
+            putTask(task);
+            downloadingBlocks.add(block);
+          }
+        } else if (!block.isOnSameChainAs(this.block)) {// 不合法区块且不同链则接受孤块
           // get new orphan block
-
           AbstractMessageTask task = new RecMessageTask(this, from, block);
           putTask(task);
           downloadingBlocks.add(block);
@@ -700,30 +703,34 @@ public class Node {
     }
 
     if(message instanceof GetBlockTxnMessageTask){
-			this.messageQue.add((GetBlockTxnMessageTask) message);
-			if(!sendingBlock){
-				this.sendNextBlockMessage();
-			}
+      this.messageQue.add((GetBlockTxnMessageTask) message);
+      if(!sendingBlock){
+          this.sendNextBlockMessage();
+      }
     }
 
     if(message instanceof CmpctBlockMessageTask){
       GHOSTBlock block = ((CmpctBlockMessageTask) message).getBlock();
       Random random = new Random();
       float CBRfailureRate = this.isChurnNode ? CBR_FAILURE_RATE_FOR_CHURN_NODE : CBR_FAILURE_RATE_FOR_CONTROL_NODE;
-			boolean success = random.nextDouble() > CBRfailureRate ? true : false;
-			if(success){
-				downloadingBlocks.remove(block);
-				this.receiveBlock(block);
-			}else{
-				AbstractMessageTask task = new GetBlockTxnMessageTask(this, from, block);
-				putTask(task);
-			}
+      boolean success = random.nextDouble() > CBRfailureRate ? true : false;
+      if(success){
+          downloadingBlocks.remove(block);
+          if(this.block == null||block.getHeight() > this.block.getHeight()) {// 接受的话必须得是新的才接受
+            this.receiveBlock(block);
+          }
+      }else{
+          AbstractMessageTask task = new GetBlockTxnMessageTask(this, from, block);
+          putTask(task);
+      }
     }
 
     if (message instanceof BlockMessageTask) {
       GHOSTBlock block = ((BlockMessageTask) message).getBlock();
       downloadingBlocks.remove(block);
-      this.receiveBlock(block);
+      if(this.block == null||block.getHeight() > this.block.getHeight()) {// 接受的话必须得是新的才接受
+        this.receiveBlock(block);
+      }
     }
   }
 
@@ -732,14 +739,14 @@ public class Node {
    * Gets block size when the node fails compact block relay.
    */
   protected long getFailedBlockSize(){
-		Random random = new Random();
-			if(this.isChurnNode){
-				int index = random.nextInt(CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CHURN_NODE.length);
-				return (long)(BLOCK_SIZE * CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CHURN_NODE[index]);
-			}else{
-				int index = random.nextInt(CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CONTROL_NODE.length);
-				return (long)(BLOCK_SIZE * CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CONTROL_NODE[index]);
-			}
+    Random random = new Random();
+      if(this.isChurnNode){
+          int index = random.nextInt(CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CHURN_NODE.length);
+          return (long)(BLOCK_SIZE * CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CHURN_NODE[index]);
+      }else{
+          int index = random.nextInt(CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CONTROL_NODE.length);
+          return (long)(BLOCK_SIZE * CBR_FAILURE_BLOCK_SIZE_DISTRIBUTION_FOR_CONTROL_NODE[index]);
+      }
   }
 
   /**

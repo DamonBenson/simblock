@@ -102,7 +102,6 @@ public class Block {
    *
    * @return the time
    */
-  //TODO what format
   public long getTime() {    return this.time;  }
 
   /**
@@ -110,7 +109,6 @@ public class Block {
    *
    * @return the id
    */
-  //TODO what format
   public int getId() {    return this.id;  }
 
   /**
@@ -131,9 +129,12 @@ public class Block {
    * @return the block with the provided height
    */
   public Block getBlockWithHeight(int height) {
-    if (this.height == height) {
+    if (this.height < height) {// 错误查询
+      return null;
+    }
+      if (this.height == height) {
       return this;
-    } else {// 父区块
+    } else {// 递归寻找父区块
       return this.parent.getBlockWithHeight(height);
     }
   }
@@ -148,9 +149,11 @@ public class Block {
     if (block == null) {//空
       return false;
     } else if (this.height <= block.height) {//非空 该区块超前 //T我过时了 F我的区块被否定了
-      return this.equals(block.getBlockWithHeight(this.height));
+      return this.equals(block.getBlockWithHeight(this.height));// T 我认可的区块已经被接受并有新的人支持 F 这是一个比我超前的竞争区块链条
     } else {//非空 该区块落后 //T过时   F失败竞争
-      return this.getBlockWithHeight(block.height).equals(block);
+      // TODO return T时 会发生冒险，下游程序会接受旧区块
+      // 已经补充
+      return this.getBlockWithHeight(block.height).equals(block);// T 我收到的块已经被我认可了 F 这是一个比我劣势的竞争区块
     }
   }
 
