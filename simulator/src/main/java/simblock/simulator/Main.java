@@ -60,11 +60,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 7;
+    public static final long TotalSimulationEpoch = 1;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 7;
+    public static long SimulationEpoch = 1;
     /**
      * Path to config file.
      */
@@ -225,11 +225,24 @@ public class Main {
             OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleB());
           }
         }
+
         if(!GHOST_USE_MODE){
           for (Node node : getSimulatedNodes()) {
             orphans.addAll(node.getOrphans());
           }
-          totalOrphansSize = orphans.size();
+          totalOrphansSize = orphans.size();// 总孤块
+
+          orphans.removeAll(OnChainBlock);// 链上的孤块不算
+
+          RealOrphans = orphans.size();// 真孤块数目
+
+          System.out.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目 valid
+          System.out.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔 valid
+          System.out.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块 Invalid 存在分叉时会导致+-1偏差
+          System.out.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的孤块 = 真孤块数目 - 真候选叔叔
+          System.out.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块 不在候选内 valid  因为没有校验就该为0
+          System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 孤块 - 真未招安的孤块 valid
+          System.out.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 待招安数目 valid
         }else{
           for (Node node : getSimulatedNodes()) {
             orphans.addAll(node.getOrphans());

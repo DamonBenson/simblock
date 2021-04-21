@@ -120,7 +120,7 @@ public class SimulationConfiguration {
    * The constant INSISTNUM. less mean fast to surrender.
    * 1 means NotINSIST
    */
-  public static final int INSISTNUM = 1;
+  public static final int INSISTNUM = 2;
 
   /**
    * The usage rate of compact block relay (CBR) protocol.
