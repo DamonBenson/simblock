@@ -18,6 +18,7 @@ package simblock.simulator;
 
 
 import simblock.block.Block;
+import simblock.block.GHOSTBlock;
 import simblock.task.AbstractMintingTask;
 import simblock.node.Node;
 
@@ -48,6 +49,10 @@ public class Main {
     public static long simulationTime = 0;
 
     /**
+     * whether use GHOST protocol
+     */
+    public static boolean GHOST_USE_MODE;
+    /**
      * The initial simulation time.
      */
     public static long simulationStamp = 0;
@@ -55,11 +60,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 1;
+    public static final long TotalSimulationEpoch = 7;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 1;
+    public static long SimulationEpoch = 7;
     /**
      * Path to config file.
      */
@@ -111,6 +116,7 @@ public class Main {
      * @param args the input arguments
      */
     public static void main(String[] args) {
+      GHOST_USE_MODE = ALGO=="simblock.node.consensus.ProofOfWorkEth"?true:false;
       while(SimulationEpoch <= TotalSimulationEpoch){
         long start = System.currentTimeMillis();
         long startStamp = getCurrentTime();
@@ -191,25 +197,90 @@ public class Main {
         }
 
         Set<Block> orphans = new HashSet<>();
+        Set<Block> UncleCandidates = new HashSet<>();
+        Set<Block> OnChainBlock = new HashSet<>();
+        Set<Block> OnChainUncleBlock = new HashSet<>();
+
+
 
 
         float averageOrphansSize;
-        int totalOrphansSize = 0;
-        int totalOrphansNum = 0;
-
+        int totalOrphansSize = -1;
+        int totalUncleCandidatesSize = -1;
         // Gather all known orphans
-        for (Node node : getSimulatedNodes()) {
-            orphans.addAll(node.getOrphans());
+        int OnZhaoAnCount = -1;
+        int RealOrphans = -1;
+        int RealUncleCandidates = -1;
+        int NotZhaoAnNum = -1;
+        int RealNotZhaoAnNum = -1;
+        int OutDateOrphan = -1;
+        int RealZhaoAnRealNum = -1;
+
+        Block selBlock = getSimulatedNodes().get(0).getBlock();
+        OnChainBlock.add(selBlock);
+        while((selBlock = selBlock.getParent())!=null){
+          OnChainBlock.add(selBlock);
+          if(GHOST_USE_MODE) {
+            OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleA());
+            OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleB());
+          }
         }
-        totalOrphansSize = orphans.size();
+        if(!GHOST_USE_MODE){
+          for (Node node : getSimulatedNodes()) {
+            orphans.addAll(node.getOrphans());
+          }
+          totalOrphansSize = orphans.size();
+        }else{
+          for (Node node : getSimulatedNodes()) {
+            orphans.addAll(node.getOrphans());
+            LinkedList<Block> UncleCandidate = node.getUncleCandidate();
+            Block uncle = null;
+            while((uncle = UncleCandidate.pollFirst())!=null){
+              UncleCandidates.add(uncle);
+            }
+          }
+          totalOrphansSize = orphans.size();// 总孤块
+          totalUncleCandidatesSize = UncleCandidates.size();// 总候选叔叔
+          Set<Block> orphansCP = new HashSet<>();
+
+          orphans.removeAll(OnChainBlock);// 链上的孤块不算
+          UncleCandidates.removeAll(OnChainBlock);// 链上的不算候选叔叔
+          UncleCandidates.removeAll(OnChainUncleBlock);// 链上的叔叔区块不算候选叔叔
+
+          RealOrphans = orphans.size();// 真孤块数目
+          RealUncleCandidates = UncleCandidates.size();// 真候选叔叔
+          OnZhaoAnCount = OnChainUncleBlock.size();// 链上的叔叔区块
+
+          NotZhaoAnNum = RealOrphans - RealUncleCandidates;// 未招安的真孤块
+
+          orphansCP.addAll(orphans);
+          orphansCP.removeAll(OnChainUncleBlock);// A-B 未招安的孤块
+          RealNotZhaoAnNum = RealOrphans - orphansCP.size();// 因为招安而减少的孤块数目 = 孤块 - 未招安的孤块
+
+          orphansCP.clear();
+          orphansCP.removeAll(UncleCandidates);// A-B 不在候选的孤块
+          OutDateOrphan = orphansCP.size();// 过期的孤块
+          RealZhaoAnRealNum = RealOrphans - orphansCP.size();// 待招安数目 =  孤块 - 过期的孤块
+
+          System.out.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目 valid
+          System.out.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔 valid
+          System.out.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块 Invalid 存在分叉时会导致+-1偏差
+          System.out.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的孤块 = 真孤块数目 - 真候选叔叔
+          System.out.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块 不在候选内 valid  因为没有校验就该为0
+          System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 孤块 - 真未招安的孤块 valid
+          System.out.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 待招安数目 valid
+//          孤块：RealOrphans 75
+//          叔叔：OnZhaoAnCount 48   RealNotZhaoAnNum 47
+//          候选：RealUncleCandidates 28
+//          过期：OutDateOrphan 0
+
+
+        }
 
 
         averageOrphansSize = (float)totalOrphansSize / getSimulatedNodes().size();
 
-        int selOrphansSize;
-        int selUncleCandidateSize;
-        selOrphansSize = getSimulatedNodes().get(0).getOrphans().size();
-        selUncleCandidateSize = getSimulatedNodes().get(0).getUncleCandidate().size();
+
 
         // Record orphans to the list of all known blocks
         blocks.addAll(orphans);
@@ -229,7 +300,6 @@ public class Main {
         //Log all orphans
         // TODO move to method and use logger
         for (Block orphan : orphans) {
-            totalOrphansNum += 1;
             try {
                 CUSTOM_TEXT_FILE.print(orphan + "|Height:" + orphan.getHeight() + "|Minter:" + orphan.getMinter() + '\n');
                 CUSTOM_TEXT_FILE.flush();
@@ -237,15 +307,7 @@ public class Main {
                 e.printStackTrace();
             }
         }
-        for (Block orphan : orphans) {
-          totalOrphansNum += 1;
-          try {
-            CUSTOM_TEXT_FILE.print(orphan + "|Height:" + orphan.getHeight() + "|Minter:" + orphan.getMinter() + '\n');
-            CUSTOM_TEXT_FILE.flush();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }
+
 
         //Log all Fork
       /*
@@ -287,9 +349,14 @@ public class Main {
         OUT_JSON_FILE.print("\"content\":{");
         OUT_JSON_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
         OUT_JSON_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
-        OUT_JSON_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
-        OUT_JSON_FILE.print("\"selOrphansSize\":" + selOrphansSize);
-        OUT_JSON_FILE.print("\"selUncleCandidateSize\":" + selUncleCandidateSize);
+        OUT_JSON_FILE.print("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize + '\n');
+        OUT_JSON_FILE.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目
+        OUT_JSON_FILE.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔
+        OUT_JSON_FILE.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块
+        OUT_JSON_FILE.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的真孤块
+        OUT_JSON_FILE.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块
+        OUT_JSON_FILE.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目
+        OUT_JSON_FILE.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 期望招安数目
         OUT_JSON_FILE.print("\"timestamp\":" + getCurrentTime());
         OUT_JSON_FILE.print("}");
         OUT_JSON_FILE.print("}");
@@ -301,9 +368,14 @@ public class Main {
         CUSTOM_TEXT_FILE.print("\"content\":{");
         CUSTOM_TEXT_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
         CUSTOM_TEXT_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
-        CUSTOM_TEXT_FILE.print("\"totalOrphansNum\":" + totalOrphansNum);
-        CUSTOM_TEXT_FILE.print("\"selOrphansSize\":" + selOrphansSize);
-        CUSTOM_TEXT_FILE.print("\"selUncleCandidateSize\":" + selUncleCandidateSize);
+        CUSTOM_TEXT_FILE.print("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize + '\n');
+        CUSTOM_TEXT_FILE.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目
+        CUSTOM_TEXT_FILE.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔
+        CUSTOM_TEXT_FILE.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块
+        CUSTOM_TEXT_FILE.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的真孤块
+        CUSTOM_TEXT_FILE.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块
+        CUSTOM_TEXT_FILE.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目
+        CUSTOM_TEXT_FILE.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 期望招安数目
         CUSTOM_TEXT_FILE.print("\"timestamp\":" + getCurrentTime());
         CUSTOM_TEXT_FILE.print("\"simulationStamp\":" + simulationStamp);
         CUSTOM_TEXT_FILE.print("}");
@@ -314,11 +386,16 @@ public class Main {
         // end json format
         // Log simulation time in milliseconds
         System.out.println(simulationTime);
-        System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
-        System.out.println("\"totalOrphansSize\":" + totalOrphansSize);
-        System.out.println("\"totalOrphansNum\":" + totalOrphansNum);
-        System.out.print("\"selOrphansSize\":" + selOrphansSize);
-        System.out.print("\"selUncleCandidateSize\":" + selUncleCandidateSize);
+        System.out.print("\"averageOrphansSize\":" + averageOrphansSize);
+        System.out.print("\"totalOrphansSize\":" + totalOrphansSize);
+        System.out.print("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize + '\n');
+        System.out.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目
+        System.out.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔
+        System.out.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块
+        System.out.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的真孤块
+        System.out.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块
+        System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目
+        System.out.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 期望招安数目
         System.out.println("\"timestamp\":" + getCurrentTime());
         System.out.println("\"simulationStamp\":" + simulationStamp);
         System.out.println("The " + SimulationEpoch + " Epoch finished,simulation Time:" + (simulationTime/1000)

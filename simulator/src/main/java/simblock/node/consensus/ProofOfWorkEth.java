@@ -13,10 +13,10 @@ import static simblock.simulator.Main.random;
  * The type Proof of work In Eth.
  */
 @SuppressWarnings("unused")
-public class PoWEth extends AbstractConsensusAlgo {
+public class ProofOfWorkEth extends AbstractConsensusAlgo {
     private final Node selfNode;
 
-    public PoWEth(Node selfNode) {
+    public ProofOfWorkEth(Node selfNode) {
         super(selfNode);
         this.selfNode = selfNode;
     }

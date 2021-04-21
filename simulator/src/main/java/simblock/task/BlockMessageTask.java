@@ -22,7 +22,7 @@ import static simblock.simulator.Network.getLatency;
 import static simblock.simulator.Timer.getCurrentTime;
 
 import simblock.block.Block;
-import simblock.block.GHOSTBlock;
+import simblock.block.Block;
 import simblock.node.Node;
 
 /**
@@ -33,7 +33,7 @@ public class BlockMessageTask extends AbstractMessageTask {
   /**
    * The {@link Block} that is sent.
    */
-  private final GHOSTBlock block;
+  private final Block block;
 
   /**
    * The block message sending delay in milliseconds.
@@ -48,7 +48,7 @@ public class BlockMessageTask extends AbstractMessageTask {
    * @param block the block instance
    * @param delay the delay of the message transmission
    */
-  public BlockMessageTask(Node from, Node to, GHOSTBlock block, long delay) {
+  public BlockMessageTask(Node from, Node to, Block block, long delay) {
     super(from, to);
     this.block = block;
     this.interval = getLatency(this.getFrom().getRegion(), this.getTo().getRegion()) + delay;
@@ -89,7 +89,7 @@ public class BlockMessageTask extends AbstractMessageTask {
    *
    * @return the block
    */
-  public GHOSTBlock getBlock() {
+  public Block getBlock() {
     return this.block;
   }
 }

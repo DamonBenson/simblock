@@ -25,8 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static simblock.settings.SimulationConfiguration.*;
-import static simblock.simulator.Main.PROPAGATION_TEXT_FILE;
-import static simblock.simulator.Main.STATIC_JSON_FILE;
+import static simblock.simulator.Main.*;
 import static simblock.simulator.Timer.getCurrentTime;
 
 
@@ -212,7 +211,8 @@ public class Simulator {
     STATIC_JSON_FILE.print("\"BLOCK_SIZE\":" + BLOCK_SIZE + ",\n");
     STATIC_JSON_FILE.print("\"NOBANDWITTHREDUCTION\":" + NOBANDWITTHREDUCTION + ",\n");
     STATIC_JSON_FILE.print("\"NOEXTRA\":" + NOEXTRA + ",\n");
-    STATIC_JSON_FILE.print("\"INISITMODE\":" + INISITMODE + ",\n");
+    STATIC_JSON_FILE.print("\"INSISTMODE\":" + INSISTMODE + ",\n");
+    STATIC_JSON_FILE.print("\"GHOST_USE_MODE\":" + GHOST_USE_MODE + ",\n");
     STATIC_JSON_FILE.print("\"ALGO\":" + ALGO + ",\n");
     STATIC_JSON_FILE.print("\"INTERVAL\":" + INTERVAL + ",\n");
     STATIC_JSON_FILE.print("\"CBR_USAGE_RATE\":" + CBR_USAGE_RATE + ",\n");
@@ -220,6 +220,7 @@ public class Simulator {
     STATIC_JSON_FILE.print("\"COMPACT_BLOCK_SIZE\":" + COMPACT_BLOCK_SIZE + ",\n");
     STATIC_JSON_FILE.print("\"CBR_FAILURE_RATE_FOR_CONTROL_NODE\":" + CBR_FAILURE_RATE_FOR_CONTROL_NODE + ",\n");
     STATIC_JSON_FILE.print("\"CBR_FAILURE_RATE_FOR_CHURN_NODE\":" + CBR_FAILURE_RATE_FOR_CHURN_NODE );
+    STATIC_JSON_FILE.print("\"INSISTNUM\":" + INSISTNUM );
     STATIC_JSON_FILE.print("}]}\n");
     STATIC_JSON_FILE.flush();
   }

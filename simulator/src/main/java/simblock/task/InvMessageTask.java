@@ -17,7 +17,7 @@
 package simblock.task;
 
 import simblock.block.Block;
-import simblock.block.GHOSTBlock;
+import simblock.block.Block;
 import simblock.node.Node;
 
 /**
@@ -29,7 +29,7 @@ public class InvMessageTask extends AbstractMessageTask {
   /**
    * Block to be advertised.
    */
-  private final GHOSTBlock block;
+  private final Block block;
 
   /**
    * Instantiates a new Inv message task.
@@ -38,7 +38,7 @@ public class InvMessageTask extends AbstractMessageTask {
    * @param to    the receiver
    * @param block the block to be advertised
    */
-  public InvMessageTask(Node from, Node to, GHOSTBlock block) {
+  public InvMessageTask(Node from, Node to, Block block) {
     super(from, to);
     this.block = block;
   }
@@ -48,7 +48,7 @@ public class InvMessageTask extends AbstractMessageTask {
    *
    * @return the block
    */
-  public GHOSTBlock getBlock() {
+  public Block getBlock() {
     return this.block;
   }
 

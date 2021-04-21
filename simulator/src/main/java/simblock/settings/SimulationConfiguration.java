@@ -32,15 +32,15 @@ public class SimulationConfiguration {
   public static final boolean PRINTOUT = false;
   public static final boolean PRINTADDBLOCK = false;
   public static final boolean PRINTGRAPH = false;
-  public static final boolean ANALYSEWHOLEPROPAGATION = false;
-  public static final boolean VERBOSE = true;
-  public static final boolean QUIET = false;
+  public static final boolean ANALYSEWHOLEPROPAGATION = false;//false as default,case not ROM memory needed
+  public static final boolean VERBOSE = false;//false as default,case not chaos
+  public static final boolean QUIET = false;//true as default,case not chaos
   public static final boolean MEMORYSAVEMODE = true;
-  public static final boolean NOBANDWITTHREDUCTION = true;//true as default,not random crash
+  public static final boolean NOBANDWITTHREDUCTION = true;//true as default,not bandwidth reduction
   public static final boolean NOEXTRA = true;//true as default,not random crash
-  public static final boolean INISITMODE = true;
-  public static final boolean GIVEINNOTCOMPLAIN = true;
-  public static final boolean INSITNOTPROUD = true;
+  public static final boolean INSISTMODE = true;
+  public static final boolean GIVEINNOTCOMPLAIN = false;//true as default,case not chaos
+  public static final boolean INSITNOTPROUD = false;//true as default,case not chaos
 
 
 
@@ -56,7 +56,7 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 500;//00;
+  public static final int END_BLOCK_HEIGHT = 10000;//00;
   //10k 10000
 
   /**0
@@ -70,7 +70,7 @@ public class SimulationConfiguration {
    * The expected value of block generation interval. The difficulty of mining is automatically
    * adjusted by this value and the sum of mining power. (unit: millisecond)
    */
-  public static final long INTERVAL = 1000 * 15 ;//1000*60;//1000*30*5;//1000*60*10;
+  public static final long INTERVAL = 1000 * 15;//1000*60;//1000*30*5;//1000*60*10;
 
   /**
    * The kind of routing table.
@@ -82,9 +82,9 @@ public class SimulationConfiguration {
    */
   // TODO not documented in markdown
   // TODO return to PoW
-  //public static final String ALGO = "simblock.node.consensus.ProofOfWork";
-  public static final String ALGO = "simblock.node.consensus.PoWEth";
-  //"simblock.node.consensus.ProofOfWork","simblock.node.consensus.PoWEth"
+//  public static final String ALGO = "simblock.node.consensus.ProofOfWork";
+  public static final String ALGO = "simblock.node.consensus.ProofOfWorkEth";
+//  "simblock.node.consensus.ProofOfWork","simblock.node.consensus.ProofOfWorkEth"
 
 
   /**
@@ -115,19 +115,17 @@ public class SimulationConfiguration {
    */
   public static final double STAKING_REWARD = 0.01;
 
-  /**
-   * whether use GHOST protocol
-   */
-  public static final boolean GHOST_USE_MODE = true; // 0.964f
+
   /**
    * The constant INSISTNUM. less mean fast to surrender.
+   * 1 means NotINSIST
    */
-  public static final int INSISTNUM = 6;
+  public static final int INSISTNUM = 1;
 
   /**
    * The usage rate of compact block relay (CBR) protocol.
    */
-  public static final float CBR_USAGE_RATE = 0f; // 0.964f
+  public static final float CBR_USAGE_RATE = 0.0f; // 0.964f
   /**
    * The rate of nodes that cause churn.
    */
