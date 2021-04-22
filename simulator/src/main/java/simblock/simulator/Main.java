@@ -60,11 +60,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 1;
+    public static final long TotalSimulationEpoch = 9;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 1;
+    public static long SimulationEpoch = 9;
     /**
      * Path to config file.
      */
@@ -107,6 +107,18 @@ public class Main {
      */
     //TODO use logger
     public static PrintWriter PROPAGATION_TEXT_FILE;
+
+    /**
+     * How much is The unclePayment.
+     *
+     * @param  generationGap
+     */
+    public static float unclePaymentMult(int generationGap) {
+      if(8>generationGap&&generationGap>0)
+        return (float) ((float)(8.0-generationGap)/8.0);// 7 No Pay
+      else
+        return 0;
+    }
 
 
 
@@ -161,7 +173,7 @@ public class Main {
                 if (currentBlockHeight > END_BLOCK_HEIGHT) {
                     break;
                 }
-                // |Log| every 100 blocks and at the second block
+                // |Log| every 100 OnChainBlock and at the second block
                 // TODO use constants here
                 if (QUIET){
                     continue;
@@ -185,17 +197,6 @@ public class Main {
         //TODO logger
         System.out.println();
 
-        Set<Block> blocks = new HashSet<>();
-
-        // Get the latest block from the first simulated node
-        Block block = getSimulatedNodes().get(0).getBlock();
-
-        //Update the list of known blocks by adding the parents of the aforementioned block
-        while (block.getParent() != null) {
-            blocks.add(block);
-            block = block.getParent();
-        }
-
         Set<Block> orphans = new HashSet<>();
         Set<Block> UncleCandidates = new HashSet<>();
         Set<Block> OnChainBlock = new HashSet<>();
@@ -215,17 +216,33 @@ public class Main {
         int RealNotZhaoAnNum = -1;
         int OutDateOrphan = -1;
         int RealZhaoAnRealNum = -1;
+        int AllOrphanCount = -1;
 
         Block selBlock = getSimulatedNodes().get(0).getBlock();
         OnChainBlock.add(selBlock);
+        // 获取区块  并  结算矿工工资
         while((selBlock = selBlock.getParent())!=null){
           OnChainBlock.add(selBlock);
+          selBlock.getMinter().addBalance(50);
+          int currHeight = selBlock.getHeight();
           if(GHOST_USE_MODE) {
-            OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleA());
-            OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleB());
+            if(((GHOSTBlock)selBlock).getUncleA() != null){
+              OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleA());
+              ((GHOSTBlock)selBlock).getUncleA().getMinter().addBalance((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleA().getHeight()))));
+              System.out.println((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleA().getHeight()))));
+
+            }
+            if(((GHOSTBlock)selBlock).getUncleB() != null){
+              OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleB());
+              ((GHOSTBlock)selBlock).getUncleB().getMinter().addBalance((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleB().getHeight()))));
+                System.out.println((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleB().getHeight()))));
+
+            }
           }
         }
 
+
+        // 非GHOST没有叔叔
         if(!GHOST_USE_MODE){
           for (Node node : getSimulatedNodes()) {
             orphans.addAll(node.getOrphans());
@@ -237,13 +254,9 @@ public class Main {
           RealOrphans = orphans.size();// 真孤块数目
 
           System.out.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目 valid
-          System.out.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔 valid
-          System.out.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块 Invalid 存在分叉时会导致+-1偏差
-          System.out.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的孤块 = 真孤块数目 - 真候选叔叔
-          System.out.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块 不在候选内 valid  因为没有校验就该为0
-          System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 孤块 - 真未招安的孤块 valid
-          System.out.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 待招安数目 valid
-        }else{
+        }
+        // GHOST统计叔叔
+        else{
           for (Node node : getSimulatedNodes()) {
             orphans.addAll(node.getOrphans());
             LinkedList<Block> UncleCandidate = node.getUncleCandidate();
@@ -252,11 +265,16 @@ public class Main {
               UncleCandidates.add(uncle);
             }
           }
-          totalOrphansSize = orphans.size();// 总孤块
-          totalUncleCandidatesSize = UncleCandidates.size();// 总候选叔叔
           Set<Block> orphansCP = new HashSet<>();
 
+          orphansCP.addAll(orphans);
+          totalOrphansSize = orphans.size();
+          totalUncleCandidatesSize = UncleCandidates.size();// 总候选叔叔
+          orphansCP.addAll(OnChainUncleBlock);
+          AllOrphanCount = orphansCP.size();// 全孤块 = 真孤块 + 招安
+
           orphans.removeAll(OnChainBlock);// 链上的孤块不算
+          orphans.removeAll(OnChainUncleBlock);// 链上的叔叔不算
           UncleCandidates.removeAll(OnChainBlock);// 链上的不算候选叔叔
           UncleCandidates.removeAll(OnChainUncleBlock);// 链上的叔叔区块不算候选叔叔
 
@@ -264,43 +282,57 @@ public class Main {
           RealUncleCandidates = UncleCandidates.size();// 真候选叔叔
           OnZhaoAnCount = OnChainUncleBlock.size();// 链上的叔叔区块
 
-          NotZhaoAnNum = RealOrphans - RealUncleCandidates;// 未招安的真孤块
+
+
+          // NotZhaoAnNum = RealOrphans - RealUncleCandidates;// 未招安的真孤块
+          // NotZhaoAnNum = RealOrphans;// 未招安的真孤块
 
           orphansCP.addAll(orphans);
           orphansCP.removeAll(OnChainUncleBlock);// A-B 未招安的孤块
-          RealNotZhaoAnNum = RealOrphans - orphansCP.size();// 因为招安而减少的孤块数目 = 孤块 - 未招安的孤块
+          // RealNotZhaoAnNum = RealOrphans - orphansCP.size();// 因为招安而减少的孤块数目 = 孤块 - 未招安的孤块
+          RealNotZhaoAnNum = AllOrphanCount - RealOrphans;// 因为招安而减少的孤块数目 = 全孤块 - 真孤块
 
-          orphansCP.clear();
-          orphansCP.removeAll(UncleCandidates);// A-B 不在候选的孤块
-          OutDateOrphan = orphansCP.size();// 过期的孤块
-          RealZhaoAnRealNum = RealOrphans - orphansCP.size();// 待招安数目 =  孤块 - 过期的孤块
+          // orphansCP.clear();
+          // orphansCP.addAll(orphans);
+          // orphansCP.removeAll(UncleCandidates);// A-B 不在候选的孤块
+          // OutDateOrphan = orphansCP.size();// 过期的孤块
+          OutDateOrphan = AllOrphanCount - OnZhaoAnCount - RealUncleCandidates;// 过期的孤块 = 全孤块 - 链上的叔叔区块 - 未招安的孤块
+          // RealZhaoAnRealNum = RealOrphans - orphansCP.size();// 待招安数目 =  孤块 - 过期的孤块
+          // RealZhaoAnRealNum = RealUncleCandidates;// 待招安数目 =  孤块 - 过期的孤块
+
+
+
 
           System.out.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目 valid
+          System.out.println("\"AllOrphanCount\":" + AllOrphanCount);//  全孤块 valid
+          System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 全孤块 - 真孤块 valid
           System.out.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔 valid
           System.out.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块 Invalid 存在分叉时会导致+-1偏差
-          System.out.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的孤块 = 真孤块数目 - 真候选叔叔
           System.out.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块 不在候选内 valid  因为没有校验就该为0
-          System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 孤块 - 真未招安的孤块 valid
-          System.out.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 待招安数目 valid
-//          孤块：RealOrphans 75
-//          叔叔：OnZhaoAnCount 48   RealNotZhaoAnNum 47
-//          候选：RealUncleCandidates 28
-//          过期：OutDateOrphan 0
+          // System.out.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 待招安数目 valid
+          // System.out.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的孤块 = 真孤块数目 - 真候选叔叔
 
+
+          // 孤块：RealOrphans 75
+          // 叔叔：OnZhaoAnCount 48   RealNotZhaoAnNum 47
+          // 候选：RealUncleCandidates 28
+          // 过期：OutDateOrphan 0
 
         }
 
 
         averageOrphansSize = (float)totalOrphansSize / getSimulatedNodes().size();
 
+        for (Node node : getSimulatedNodes()) {
+          orphans.addAll(node.getOrphans());
+        }
 
+        // Record orphans to the list of all known OnChainBlock
+        OnChainBlock.addAll(orphans);
 
-        // Record orphans to the list of all known blocks
-        blocks.addAll(orphans);
+        ArrayList<Block> blockList = new ArrayList<>(OnChainBlock);
 
-        ArrayList<Block> blockList = new ArrayList<>(blocks);
-
-        //Sort the blocks first by time, then by hash code
+        //Sort the OnChainBlock first by time, then by hash code
         blockList.sort((a, b) -> {
             int order = Long.signum(a.getTime() - b.getTime());
             if (order != 0) {
@@ -320,15 +352,24 @@ public class Main {
                 e.printStackTrace();
             }
         }
+        for (Node node : getSimulatedNodes()) {
+          try {
+            CUSTOM_TEXT_FILE.print(node + "|Balance:" + node.getBalance() + "|MiningPower:" + node.getMiningPower() + '\n');
+            CUSTOM_TEXT_FILE.flush();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+
+        }
 
 
         //Log all Fork
-      /*
-      Log in format:
-      ＜fork_information, block height, block ID＞
-      fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
-      "Orphan" denote block is an orphan block.
-      */
+        /*
+        Log in format:
+        ＜fork_information, block height, block ID＞
+        fork_information: One of "OnChain" and "Orphan". "OnChain" denote block is on Main chain.
+        "Orphan" denote block is an orphan block.
+        */
         // TODO move to method and use logger
         try {
 
@@ -363,52 +404,49 @@ public class Main {
         OUT_JSON_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
         OUT_JSON_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
         OUT_JSON_FILE.print("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize + '\n');
-        OUT_JSON_FILE.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目
-        OUT_JSON_FILE.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔
-        OUT_JSON_FILE.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块
-        OUT_JSON_FILE.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的真孤块
-        OUT_JSON_FILE.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块
-        OUT_JSON_FILE.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目
-        OUT_JSON_FILE.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 期望招安数目
+        OUT_JSON_FILE.print("\"RealOrphans\":" + RealOrphans);// 真孤块数目 valid
+        OUT_JSON_FILE.print("\"AllOrphanCount\":" + AllOrphanCount);//  全孤块 valid
+        OUT_JSON_FILE.print("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 全孤块 - 真孤块 valid
+        OUT_JSON_FILE.print("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔 valid
+        OUT_JSON_FILE.print("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块 Invalid 存在分叉时会导致+-1偏差
+        OUT_JSON_FILE.print("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块 不在候选内 valid  因为没有校验就该为0
         OUT_JSON_FILE.print("\"timestamp\":" + getCurrentTime());
         OUT_JSON_FILE.print("}");
         OUT_JSON_FILE.print("}");
         OUT_JSON_FILE.print("]");
         OUT_JSON_FILE.close();
         // end json format
-        CUSTOM_TEXT_FILE.print("{");
-        CUSTOM_TEXT_FILE.print("\"kind\":\"simulation-end\",");
-        CUSTOM_TEXT_FILE.print("\"content\":{");
-        CUSTOM_TEXT_FILE.print("\"averageOrphansSize\":" + averageOrphansSize);
-        CUSTOM_TEXT_FILE.print("\"totalOrphansSize\":" + totalOrphansSize);
-        CUSTOM_TEXT_FILE.print("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize + '\n');
-        CUSTOM_TEXT_FILE.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目
-        CUSTOM_TEXT_FILE.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔
-        CUSTOM_TEXT_FILE.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块
-        CUSTOM_TEXT_FILE.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的真孤块
-        CUSTOM_TEXT_FILE.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块
-        CUSTOM_TEXT_FILE.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目
-        CUSTOM_TEXT_FILE.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 期望招安数目
-        CUSTOM_TEXT_FILE.print("\"timestamp\":" + getCurrentTime());
-        CUSTOM_TEXT_FILE.print("\"simulationStamp\":" + simulationStamp);
-        CUSTOM_TEXT_FILE.print("}");
-        CUSTOM_TEXT_FILE.print("}");
-        CUSTOM_TEXT_FILE.print("]");
+        CUSTOM_TEXT_FILE.println("{");
+        CUSTOM_TEXT_FILE.println("\"kind\":\"simulation-end\",");
+        CUSTOM_TEXT_FILE.println("\"content\":{");
+        CUSTOM_TEXT_FILE.println("\"averageOrphansSize\":" + averageOrphansSize);
+        CUSTOM_TEXT_FILE.println("\"totalOrphansSize\":" + totalOrphansSize);
+        CUSTOM_TEXT_FILE.println("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize);
+        CUSTOM_TEXT_FILE.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目 valid
+        CUSTOM_TEXT_FILE.println("\"AllOrphanCount\":" + AllOrphanCount);//  全孤块 valid
+        CUSTOM_TEXT_FILE.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 全孤块 - 真孤块 valid
+        CUSTOM_TEXT_FILE.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔 valid
+        CUSTOM_TEXT_FILE.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块 Invalid 存在分叉时会导致+-1偏差
+        CUSTOM_TEXT_FILE.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块 不在候选内 valid  因为没有校验就该为0
+        CUSTOM_TEXT_FILE.println("\"timestamp\":" + getCurrentTime());
+        CUSTOM_TEXT_FILE.println("\"simulationStamp\":" + simulationStamp);
+        CUSTOM_TEXT_FILE.println("}");
+        CUSTOM_TEXT_FILE.println("}");
+        CUSTOM_TEXT_FILE.println("]");
         CUSTOM_TEXT_FILE.close();
         PROPAGATION_TEXT_FILE.close();
         // end json format
         // Log simulation time in milliseconds
         System.out.println(simulationTime);
-        System.out.print("\"averageOrphansSize\":" + averageOrphansSize);
-        System.out.print("\"totalOrphansSize\":" + totalOrphansSize);
-        System.out.print("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize + '\n');
-        System.out.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目
-        System.out.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔
-        System.out.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块
-        System.out.println("\"NotZhaoAnNum\":" + NotZhaoAnNum);// 未招安的真孤块
-        System.out.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块
-        System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目
-        System.out.println("\"RealZhaoAnRealNum\":" + RealZhaoAnRealNum);// 期望招安数目
+        System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
+        System.out.println("\"totalOrphansSize\":" + totalOrphansSize);
+        System.out.println("\"totalUncleCandidatesSize\":" + totalUncleCandidatesSize);
+        System.out.println("\"RealOrphans\":" + RealOrphans);// 真孤块数目 valid
+        System.out.println("\"AllOrphanCount\":" + AllOrphanCount);//  全孤块 valid
+        System.out.println("\"RealNotZhaoAnNum\":" + RealNotZhaoAnNum);// 因为招安而减少的孤块数目 = 全孤块 - 真孤块 valid
+        System.out.println("\"RealUncleCandidates\":" + RealUncleCandidates);// 真候选叔叔 valid
+        System.out.println("\"OnZhaoAnCount\":" + OnZhaoAnCount);// 链上的叔叔区块 Invalid 存在分叉时会导致+-1偏差
+        System.out.println("\"OutDateOrphan\":" + OutDateOrphan);// 过期的孤块 不在候选内 valid  因为没有校验就该为0
         System.out.println("\"timestamp\":" + getCurrentTime());
         System.out.println("\"simulationStamp\":" + simulationStamp);
         System.out.println("The " + SimulationEpoch + " Epoch finished,simulation Time:" + (simulationTime/1000)

@@ -198,6 +198,7 @@ public class Node {
    * Generates a uncle
    */
   public Block generateUncleA() {
+    checkUncleCandidate(7);
     if(this.uncleCandidate.isEmpty())
       return null;
     return this.uncleCandidate.get(this.uncleCandidate.size()-1);
@@ -242,12 +243,21 @@ public class Node {
   }
 
   /**
-   * Gets mining power.
+   * Gets balance.
    *
    * @return the balance
    */
   public float getBalance() { return this.balance; }
-
+  /**
+   * Gets balance.
+   *
+   * @return the balance
+   */
+  public void addBalance(float coin) {
+    if(coin>0) {
+      this.balance += coin;
+    }
+  }
   /**
    * Gets the consensus algorithm.
    *
@@ -419,37 +429,52 @@ public class Node {
     OUT_JSON_FILE.flush();
   }
   /**
-   * to figure out why LinkedList can't like set
-   * TODO
+   * @author: Bernard
+   * @date: 2021/4/22 11:15
+   * @description: ncleCandidate should above -8
    */
-  public boolean checkUncleCandidate() {
-    for(int checkIndex = uncleCandidate.size()-1 ; checkIndex > -1 ; checkIndex--){
-      for(int index = uncleCandidate.size()-1 ; index > -1 ; index--){
-        if(uncleCandidate.get(checkIndex).equals(uncleCandidate.get(index))){
-          return true;
-        }
-      }
+  public void checkUncleCandidate() {
+    // 当前高度
+    int currHeight = this.block.getHeight();
+    // 合法高度 -8
+    int validHeight = currHeight - 8;
+    if(this.uncleCandidate.isEmpty())
+      return;
+    // 低于合法高度的候选叔叔出列
+    while(!this.uncleCandidate.isEmpty()&&this.uncleCandidate.getLast().getHeight() <= validHeight){
+      this.uncleCandidate.removeLast();
     }
-    return false;
-    // eg
-    //    if(checkUncleCandidate()){
-    //      System.out.println("Error checkUncleCandidate IS TRUE");
-    //    }
   }
-
   /**
-   * nominate Uncle Candidates
+   * @param Height: Custom Height
+   * @author: Bernard
+   * @date: 2021/4/22 11:17
+   * @description: UncleCandidate should above -8
+   */
+  public void checkUncleCandidate(int Height) {
+    // 当前高度
+    int currHeight = this.block.getHeight();
+    // 合法高度 -8
+    int validHeight = currHeight - Height;
+    if(this.uncleCandidate.isEmpty())
+      return;
+    // 低于合法高度的候选叔叔出列
+    while(!this.uncleCandidate.isEmpty()&&this.uncleCandidate.getLast().getHeight() <= validHeight){
+      this.uncleCandidate.removeLast();
+    }
+  }
+  /**
+   * @param orphanBlock:
+   * @param validBlock:
+   * @author: Bernard
+   * @date: 2021/4/22 11:01
+   * @description: nominate Uncle Candidates
    */
   public void nominateUncleCandidate(Block orphanBlock, Block validBlock) {
     // TODO 7 Height to deNominate
-//    if(MEMORYSAVEMODE) {
-//      while (uncleCandidate.size() > 15) {
-//        uncleCandidate.getFirst();
-//      }
-//    }
+    checkUncleCandidate();
     int IndexMax = uncleCandidate.size() - 1;
     int selectedIndex = IndexMax;
-
     if(IndexMax == -1){
       uncleCandidate.add(orphanBlock);
       return;// 完成推举了
@@ -485,7 +510,7 @@ public class Node {
       uncleCandidate.add(0,orphanBlock);
     }
 
-    System.out.println(uncleCandidate.getLast().getHeight() + "\"HEIGHT\":" + uncleCandidate.getFirst().getHeight());
+    System.out.println(uncleCandidate.getLast().getHeight() + "\"HEIGHT\":" + uncleCandidate.getFirst().getHeight());// 加在最末尾
 
   }
 
