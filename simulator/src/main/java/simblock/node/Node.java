@@ -546,18 +546,19 @@ public class Node {
   //TODO check this out later
   public void addOrphans(GHOSTBlock orphanBlock, GHOSTBlock validBlock) {
     if (orphanBlock != validBlock) {
-      // TODO Abandon Design
-      // receiveOrphanCount += 1;
+      // 避免重复招安
+      if(!this.orphans.contains(orphanBlock)){
+        nominateUncleCandidate(orphanBlock,validBlock);
+      }
 
       this.orphans.add(orphanBlock);
       this.orphans.remove(validBlock);
       this.uncleCandidate.remove(validBlock);
-      nominateUncleCandidate(orphanBlock,validBlock);
 
-      if (validBlock == null || orphanBlock.getHeight() > validBlock.getHeight()) {//
-        this.addOrphans(orphanBlock.getParent(), validBlock); // 发现分叉
-      } else if (orphanBlock.getHeight() == validBlock.getHeight()) {
-        this.addOrphans(orphanBlock.getParent(), validBlock.getParent()); // 发现竞争分叉
+      if (validBlock == null || orphanBlock.getHeight() > validBlock.getHeight()) {// 发现分叉
+        this.addOrphans(orphanBlock.getParent(), validBlock);
+      } else if (orphanBlock.getHeight() == validBlock.getHeight()) {// 发现竞争分叉
+        this.addOrphans(orphanBlock.getParent(), validBlock.getParent());
       } else {//合法链更长 开始承认合法链
         this.addOrphans(orphanBlock, validBlock.getParent());
       }
@@ -625,7 +626,7 @@ public class Node {
     //   System.out.println("block.getUncleB():" + block.getUncleB());
 
     if (block.getUncleA() != this.block && block.getUncleB() != this.block) {// 招安失败
-      if(!INSITNOTPROUD) {
+      if(!INSISTNOTPROUD) {
         System.out.println("NOT!!!I wanna not give up" + "\tcurrentBlockHeight:" + block.getHeight() + "\tMineBlockHeight:" + this.block.getHeight());
       }
       this.addOrphans((GHOSTBlock)block, (GHOSTBlock)this.block);
@@ -784,44 +785,53 @@ public class Node {
         acceptBlock(block);
         return;
       }
-      // 招安：最长链共识 及时消除分叉
+        // GHOST
       if(GHOST_USE_MODE){
-        if (!this.block.isOnSameChainAs(block)) {// 不同链则丢弃自己的区块，接受新链，
-          insistBlock((GHOSTBlock)block);// 接受新链时会坚持自我
+        if(this.block.getHeight() >= block.getHeight()) {// 同链的旧区块不要(保护)
+          addOrphans((GHOSTBlock)block,(GHOSTBlock)this.block);
           return;
-        }else if(this.block.getHeight() >= block.getHeight()) {// 同链的旧区块不要(保护)
-          return;
-        }else{// 同链的新区块接受
+        }
+
+        if (!this.block.isOnSameChainAs(block)){// 不同链则丢弃自己的区块，接受新链，
+          // 竞争策略
+          if(INSISTMODE){
+            insistBlock((GHOSTBlock)block);// 竞争坚持
+          }
+          else {
+            // If orphan mark orphan
+            this.addOrphans((GHOSTBlock)this.block, (GHOSTBlock)block);
+            acceptBlock((GHOSTBlock)block);// 最长链共识
+          }
+        }
+        else{// 同链的新区块接受
           acceptBlock((GHOSTBlock)block);
         }
-
       }
-      // 坚持：最长链共识
-      else if(INSISTMODE){
-        if (!this.block.isOnSameChainAs(block)) {// 不同链则丢弃自己的区块，接受新链，
-          insistBlock(block);// 接受新链时会坚持自我 重载
-          return;
-        }else if(this.block.getHeight() >= block.getHeight()) {// 同链的旧区块不要(保护)
-          return;
-        }else{// 同链的新区块接受
-          acceptBlock(block);
-        }
-      }
-      // 正常：最长链共识
+        // Origin
       else{
-
-        if (!this.block.isOnSameChainAs(block)) {// 不同链则丢弃自己的区块，接受新链，
-          // If orphan mark orphan
-          this.addOrphans(this.block, block);
-          acceptBlock(block);
-        }else if(this.block.getHeight() >= block.getHeight()){// 同链的旧区块不要(保护)
+        if(this.block.getHeight() >= block.getHeight()) {// 同链的旧区块不要(保护)
+          addOrphans(block,this.block);
           return;
-        }else{// 同链的新区块接受
-          acceptBlock(block);
         }
 
+        if (!this.block.isOnSameChainAs(block)) {// 不同链则丢弃自己的区块，接受新链，
+            // 竞争策略
+          if(INSISTMODE){
+            insistBlock(block);// 竞争坚持
+          }
+          else {
+            // If orphan mark orphan
+            this.addOrphans(this.block, block);
+            acceptBlock(block);// 最长链共识
+          }
+        }
+        else{// 同链的新区块接受
+          acceptBlock(block);
+        }
       }
-      // TODO 原版的代码存在冒险 旧区块居然会接收？  似乎是旧区块不会再次中继
+    }
+
+      // TODO 原版的代码存在冒险 下为原设计
       //      if (this.block != null && !this.block.isOnSameChainAs(block)) {//不同链 标记孤块 接受区块
       //        // If orphan mark orphan
       //        this.addOrphans(this.block, block);
@@ -832,9 +842,7 @@ public class Node {
       //      this.minting();
       //      // Advertise received block
       //      this.sendInv(block);
-
-    }
-    // 如果难度不够变成孤块  注册未登记的孤块
+      // 如果难度不够变成孤块  注册未登记的孤块
     else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)) {
 
       // TODO better understand - what if orphan is not valid?

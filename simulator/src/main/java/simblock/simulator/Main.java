@@ -60,11 +60,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 9;
+    public static final long TotalSimulationEpoch = 1;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 9;
+    public static long SimulationEpoch = 1;
     /**
      * Path to config file.
      */
@@ -97,16 +97,22 @@ public class Main {
     public static PrintWriter STATIC_JSON_FILE;
 
     /**
-     * The constant STATIC_JSON_FILE.
+     * The constant CUSTOM_TEXT_FILE.
      */
     //TODO use logger
     public static PrintWriter CUSTOM_TEXT_FILE;
 
     /**
-     * The constant STATIC_JSON_FILE.
+     * The constant PROPAGATION_TEXT_FILE.
      */
     //TODO use logger
     public static PrintWriter PROPAGATION_TEXT_FILE;
+
+  /**
+   * The constant REWARD_TEXT_FILE.
+   */
+  //TODO use logger
+  public static PrintWriter REWARD_TEXT_FILE;
 
     /**
      * How much is The unclePayment.
@@ -139,6 +145,8 @@ public class Main {
                     new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./output%d.json",SimulationEpoch))))));
             STATIC_JSON_FILE = new PrintWriter(
                     new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./static%d.json",SimulationEpoch))))));
+            REWARD_TEXT_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./reward%d.txt",SimulationEpoch))))));
             CUSTOM_TEXT_FILE = new PrintWriter(
                     new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
             PROPAGATION_TEXT_FILE = new PrintWriter(
@@ -281,7 +289,6 @@ public class Main {
           RealOrphans = orphans.size();// 真孤块数目
           RealUncleCandidates = UncleCandidates.size();// 真候选叔叔
           OnZhaoAnCount = OnChainUncleBlock.size();// 链上的叔叔区块
-
 
 
           // NotZhaoAnNum = RealOrphans - RealUncleCandidates;// 未招安的真孤块
@@ -504,7 +511,7 @@ public class Main {
             }
         }
 
-        Collections.shuffle(list, random);
+        Collections.shuffle(list, random);// 打乱顺序
         return list;
     }
 

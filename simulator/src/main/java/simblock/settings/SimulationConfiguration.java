@@ -32,7 +32,7 @@ public class SimulationConfiguration {
   public static final boolean PRINTOUT = false;
   public static final boolean PRINTADDBLOCK = false;
   public static final boolean PRINTGRAPH = false;
-  public static final boolean ANALYSEWHOLEPROPAGATION = false;//false as default,case not ROM memory needed
+  public static final boolean ANALYSEWHOLEPROPAGATION = true;//false as default,case not ROM memory needed
   public static final boolean VERBOSE = true;//false as default,case not chaos
   public static final boolean QUIET = false;//true as default,case not chaos  well， it can‘t silent all
   public static final boolean MEMORYSAVEMODE = true;
@@ -40,7 +40,8 @@ public class SimulationConfiguration {
   public static final boolean NOEXTRA = true;//true as default,not random crash
   public static final boolean INSISTMODE = true;
   public static final boolean GIVEINNOTCOMPLAIN = false;//true as default,case not chaos
-  public static final boolean INSITNOTPROUD = true;//true as default,case not chaos
+  public static final boolean INSISTNOTPROUD = true;//true as default,case not chaos
+  //TODO adopt AllUncle
   public static final boolean GHOSTRELAYINV = false;//false as default,RELAY cost more resource
 
 
@@ -57,21 +58,21 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 1000;//00;
+  public static final int END_BLOCK_HEIGHT = 200;//00;
   //10k 10000
 
   /**
    * Block size. (unit: byte).
    */
-  public static final long BLOCK_SIZE = 10485760;//535000;//6110;//8000;
-  // 535000;//0.5MB  //10485760 10MB
+  public static final long BLOCK_SIZE = 1048576;//535000;//6110;//8000;
+  // 535000;//0.5MB  //10485760 10MB //1048576 1MB
 
 
   /**
    * The expected value of block generation interval. The difficulty of mining is automatically
    * adjusted by this value and the sum of mining power. (unit: millisecond)
    */
-  public static final long INTERVAL = 1000 * 60 * 10;//1000*60;//1000*30*5;//1000*60*10;
+  public static final long INTERVAL = 1000 * 60;//1000*60;//1000*30*5;//1000*60*10;
 
   /**
    * The kind of routing table.
@@ -83,8 +84,8 @@ public class SimulationConfiguration {
    */
   // TODO not documented in markdown
   // TODO return to PoW
-//  public static final String ALGO = "simblock.node.consensus.ProofOfWork";
-  public static final String ALGO = "simblock.node.consensus.ProofOfWorkEth";
+  public static final String ALGO = "simblock.node.consensus.ProofOfWork";
+//  public static final String ALGO = "simblock.node.consensus.ProofOfWorkEth";
 //  "simblock.node.consensus.ProofOfWork","simblock.node.consensus.ProofOfWorkEth"
 
 

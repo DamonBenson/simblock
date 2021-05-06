@@ -75,8 +75,8 @@ public class NetworkConfiguration {
    * bandwidth. (unit: bit per second) for year 2019
    */
   private static final long[] DOWNLOAD_BANDWIDTH_2019 = {
-      52000000, 40000000, 18000000, 22800000,
-      22800000, 29900000, 6 * 1000000
+      52*1000*1000, 40*1000*1000, 18*1000*1000, 22800*1000,
+      22800*1000, 29900*1000, 6 * 1000*1000
   };
 
   /**
@@ -139,6 +139,8 @@ public class NetworkConfiguration {
   private static final double[] REGION_DISTRIBUTION_DOGECOIN = {
       0.3924, 0.4879, 0.0212, 0.0697, 0.0106, 0.0182
   };
+  // "NORTH_AMERICA", "EUROPE", "SOUTH_AMERICA",
+  // "ASIA_PACIFIC", "JAPAN" , "AUSTRALIA"
 
   /**
    * The distribution of node's region. Each value means the rate of the number of nodes in the
