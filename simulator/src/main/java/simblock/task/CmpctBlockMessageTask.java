@@ -65,8 +65,15 @@ public class CmpctBlockMessageTask extends AbstractMessageTask {
    */
   @Override
   public void run() {
+//    if(!this.getFrom().getMessageQue().isEmpty()){// 是否有排队
+//      AbstractMessageTask Message = this.getFrom().getMessageQue().get(0); // 重传完成
+//      Block block = ((RecMessageTask) Message).getBlock();
+//
+//      Message.getTo().ReConMap.get(block).remove(Message.getFrom());// 重传完成
+//    }
 
     this.getFrom().sendNextBlockMessage();
+    this.block.propagationFinished = getCurrentTime();
     if(PRINTOUT) {
       OUT_JSON_FILE.print("{");
       OUT_JSON_FILE.print("\"kind\":\"flow-block\",");

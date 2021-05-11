@@ -157,6 +157,23 @@ public class NetworkConfiguration {
   };
 
   /**
+   * The cumulative distribution of number of outbound links for ethereum.
+   */
+  private static final double[] DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM = {
+          0.005,          0.010,          0.015,          0.020,          0.025,
+          0.030,          0.035,          0.040,          0.045,          0.050,
+          0.060,          0.070,          0.080,          0.090,          0.100,
+          0.110,          0.120,          0.130,          0.140,          0.150,
+          0.170,          0.190,          0.210,          0.230,          0.250,
+          0.270,          0.290,          0.320,          0.350,          0.380,
+          0.410,          0.440,          0.480,          0.530,          0.590,
+          0.650,          0.700,          0.740,          0.770,          0.800,
+          0.830,          0.850,          0.870,          0.890,          0.910,
+          0.930,          0.940,          0.950,          0.960,          0.970,
+          0.975,          0.980,          0.985,          0.990,          0.995,          1.000
+  };
+
+  /**
    * The cumulative distribution of number of outbound links for Litecoin.
    */
   //TODO year
@@ -177,5 +194,9 @@ public class NetworkConfiguration {
    * The cumulative distribution of number of outbound links. Cf. Andrew Miller et al.,
    * "Discovering bitcoin's public topology and influential nodes", 2015.
    */
-  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_BITCOIN_2015;
+  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM;
+  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM";
+//  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_BITCOIN_2015;
+//  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_BITCOIN_2015";
+
 }

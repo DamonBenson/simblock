@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static simblock.settings.SimulationConfiguration.*;
+import static simblock.settings.NetworkConfiguration.*;
 import static simblock.simulator.Main.*;
 import static simblock.simulator.Timer.getCurrentTime;
 
@@ -149,22 +150,33 @@ public class Simulator {
       LinkedHashMap<Integer, Long> propagation = observedPropagations.get(
               observedBlocks.indexOf(block)
       );
+
       // Update information for the new block
       propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
+
+//      if(propagation.get(node.getNodeID())>5000){
+//        System.out.println(propagation.get(node.getNodeID()));
+//      }
     } else {
       // If the block has not been seen by any node and there is ||no memory|| allocated
       // TODO move magic number to constant
       if ((MEMORYSAVEMODE)&(observedBlocks.size() > 0)) {
         // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
         // Now there is no limit
-        printPropagation(observedBlocks.get(0), observedPropagations.get(0));
-        observedBlocks.remove(0);
-        observedPropagations.remove(0);
+        // 孤块或者广播完成的块才打印
+        if(observedPropagations.get(0).size()==NUM_OF_NODES || observedBlocks.get(0).getHeight() < (block.getHeight()-5)){
+          printPropagation(observedBlocks.get(0), observedPropagations.get(0));
+          observedBlocks.remove(0);
+          observedPropagations.remove(0);
+        }
+
       }
       // If the block has not been seen by any node and there is additional memory
       LinkedHashMap<Integer, Long> propagation = new LinkedHashMap<>();
       // propagation   (节点ID，该节点收到该区块的时间：区别于接受区块)
+      // propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
       propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
+
       // Record the block as seen
       observedBlocks.add(block);
       // Record the propagation time
@@ -189,7 +201,7 @@ public class Simulator {
     if(!ANALYSEWHOLEPROPAGATION)
       return;
     // Print block and its height
-    // PROPAGATION_TEXT_FILE.print(block + ":" + block.getHeight() + '\n');
+     PROPAGATION_TEXT_FILE.print(block + ":" + block.getHeight() + '\n');
 
     // TODO block does not have a toString method, what is printed here
     for (Map.Entry<Integer, Long> timeEntry : propagation.entrySet()) {
@@ -211,7 +223,7 @@ public class Simulator {
     STATIC_JSON_FILE.print("\"BLOCK_SIZE\":" + BLOCK_SIZE + ",\n");
     STATIC_JSON_FILE.print("\"NOBANDWITTHREDUCTION\":" + NOBANDWITTHREDUCTION + ",\n");
     STATIC_JSON_FILE.print("\"NOEXTRA\":" + NOEXTRA + ",\n");
-    STATIC_JSON_FILE.print("\"INSISTMODE\":" + INSISTMODE + ",\n");
+    STATIC_JSON_FILE.print("\"INSIST_NODE_RATE\":" + INSIST_NODE_RATE + ",\n");
     STATIC_JSON_FILE.print("\"GHOST_USE_MODE\":" + GHOST_USE_MODE + ",\n");
     STATIC_JSON_FILE.print("\"ALGO\":" + ALGO + ",\n");
     STATIC_JSON_FILE.print("\"INTERVAL\":" + INTERVAL + ",\n");
@@ -221,10 +233,20 @@ public class Simulator {
     STATIC_JSON_FILE.print("\"CBR_FAILURE_RATE_FOR_CONTROL_NODE\":" + CBR_FAILURE_RATE_FOR_CONTROL_NODE + ",\n");
     STATIC_JSON_FILE.print("\"CBR_FAILURE_RATE_FOR_CHURN_NODE\":" + CBR_FAILURE_RATE_FOR_CHURN_NODE );
     STATIC_JSON_FILE.print("\"INSISTNUM\":" + INSISTNUM );
+    STATIC_JSON_FILE.print("\"DEGREE_DISTRIBUTION\":" + DEGREE_DISTRIBUTION_NAME );
+
     STATIC_JSON_FILE.print("}]}\n");
     STATIC_JSON_FILE.flush();
   }
-
+  /**
+   * Print propagation information about all blocks, internally relying on
+   * {@link Simulator#printPropagation(Block, LinkedHashMap)}.
+   */
+  public static void printAllPropagation(ArrayList<Block> blockList) {
+    for (int i = 0; i < observedBlocks.size(); i++) {
+      printPropagation(observedBlocks.get(i), observedPropagations.get(i));
+    }
+  }
   /**
    * Print propagation information about all blocks, internally relying on
    * {@link Simulator#printPropagation(Block, LinkedHashMap)}.

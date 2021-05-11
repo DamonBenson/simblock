@@ -58,27 +58,23 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 200;//00;
+  public static final int END_BLOCK_HEIGHT = 10;//00;
   //10k 10000
-
-  /**
-   * Block size. (unit: byte).
-   */
-  public static final long BLOCK_SIZE = 1048576;//535000;//6110;//8000;
-  // 535000;//0.5MB  //10485760 10MB //1048576 1MB
-
-
-  /**
-   * The expected value of block generation interval. The difficulty of mining is automatically
-   * adjusted by this value and the sum of mining power. (unit: millisecond)
-   */
-  public static final long INTERVAL = 1000 * 60;//1000*60;//1000*30*5;//1000*60*10;
-
   /**
    * The kind of routing table.
    */
   public static final String TABLE = "simblock.node.routing.BitcoinCoreTable";
 
+  /**
+   * Block size. (unit: byte).
+   */
+  public static final long BLOCK_SIZE = 1048576;//535000;//6110;//8000;
+  // 535000;//0.5MB  //10485760 10MB //1048576 1MB // 314573;//0.5MB
+  /**
+   * The expected value of block generation interval. The difficulty of mining is automatically
+   * adjusted by this value and the sum of mining power. (unit: millisecond)
+   */
+  public static final long INTERVAL = 1000 * 60;//1000*60;//1000*30*5;//1000*60*10;
   /**
    * The consensus algorithm to be used.
    */
@@ -87,6 +83,18 @@ public class SimulationConfiguration {
   public static final String ALGO = "simblock.node.consensus.ProofOfWork";
 //  public static final String ALGO = "simblock.node.consensus.ProofOfWorkEth";
 //  "simblock.node.consensus.ProofOfWork","simblock.node.consensus.ProofOfWorkEth"
+  /**
+   * The usage rate of compact block relay (CBR) protocol.
+   */
+  public static final float CBR_USAGE_RATE = 0.0f; // 0.964f
+  /**
+   * The rate of nodes that cause churn.
+   */
+  public static final float CHURN_NODE_RATE = 0.976f;
+  /**
+   * The rate of nodes that cause churn.
+   */
+  public static final float INSIST_NODE_RATE = 0.0f;
 
 
   /**
@@ -124,14 +132,7 @@ public class SimulationConfiguration {
    */
   public static final int INSISTNUM = 2;
 
-  /**
-   * The usage rate of compact block relay (CBR) protocol.
-   */
-  public static final float CBR_USAGE_RATE = 0.0f; // 0.964f
-  /**
-   * The rate of nodes that cause churn.
-   */
-  public static final float CHURN_NODE_RATE = 0.976f;
+
   /**
    * Compact block size. (unit: byte)
    */

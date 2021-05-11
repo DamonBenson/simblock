@@ -50,7 +50,7 @@ public class Timer {
   /**
    * Represents a {@link Task} that is scheduled to be executed.
    */
-  private static class ScheduledTask implements Comparable<ScheduledTask> {
+  private static class ScheduledTask implements Comparable<ScheduledTask>{
     private final Task task;
     private final long scheduledTime;
 
@@ -90,16 +90,24 @@ public class Timer {
      * @return 1 if self is executed later, 0 if concurrent and -1 if self is to be executed before.
      */
     public int compareTo(ScheduledTask o) {
-      if (this.equals(o)) {
-        return 0;
-      }
-      int order = Long.signum(this.scheduledTime - o.scheduledTime);
-      if (order != 0) {
-        return order;
-      }
-      order = System.identityHashCode(this) - System.identityHashCode(o);
-      return order;
+
+//      if (this.equals(o)) {
+//        return 0;
+//      }
+//
+//      int order = Long.signum(this.scheduledTime - o.scheduledTime);
+//      if (order != 0) {
+//        return order;// +-1
+//      }
+//
+//      order = Long.signum(System.identityHashCode(this) - System.identityHashCode(o));// 相同时随机先后
+//      return order;// +-1
+        if(this.scheduledTime<o.scheduledTime) return -1;
+        else if(this.scheduledTime>o.scheduledTime) return 1;
+        else return 0;
+
     }
+
   }
 
   /**
@@ -165,6 +173,10 @@ public class Timer {
     ScheduledTask scheduledTask = new ScheduledTask(task, currentTime + task.getInterval());
     taskMap.put(task, scheduledTask);
     taskQueue.add(scheduledTask);
+//    for(ScheduledTask Task:taskQueue)
+//      System.out.println(Task.task + "\t" + Task.scheduledTime + "\t");
+//    System.out.println("QUEUE");
+
   }
 
   /**

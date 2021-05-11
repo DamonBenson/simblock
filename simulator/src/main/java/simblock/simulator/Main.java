@@ -41,12 +41,15 @@ public class Main {
     /**
      * The constant to be used as the simulation seed.
      */
-    public static Random random = new Random(10);
+    public static Random random = new Random();
 
     /**
      * The initial simulation time.
      */
     public static long simulationTime = 0;
+
+    public static long RSTTime = 0;
+
 
     /**
      * whether use GHOST protocol
@@ -60,11 +63,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 1;
+    public static final long TotalSimulationEpoch = 7;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 1;
+    public static long SimulationEpoch = 7;
     /**
      * Path to config file.
      */
@@ -237,14 +240,12 @@ public class Main {
             if(((GHOSTBlock)selBlock).getUncleA() != null){
               OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleA());
               ((GHOSTBlock)selBlock).getUncleA().getMinter().addBalance((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleA().getHeight()))));
-              System.out.println((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleA().getHeight()))));
-
+              ((GHOSTBlock)selBlock).getMinter().addBalance((float) (50.0 * (1/32)));
             }
             if(((GHOSTBlock)selBlock).getUncleB() != null){
               OnChainUncleBlock.add(((GHOSTBlock)selBlock).getUncleB());
               ((GHOSTBlock)selBlock).getUncleB().getMinter().addBalance((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleB().getHeight()))));
-                System.out.println((float) (50.0 * unclePaymentMult((currHeight-((GHOSTBlock)selBlock).getUncleB().getHeight()))));
-
+              ((GHOSTBlock)selBlock).getMinter().addBalance((float) (50.0 * (1/32)));
             }
           }
         }
@@ -361,8 +362,12 @@ public class Main {
         }
         for (Node node : getSimulatedNodes()) {
           try {
-            CUSTOM_TEXT_FILE.print(node + "|Balance:" + node.getBalance() + "|MiningPower:" + node.getMiningPower() + '\n');
-            CUSTOM_TEXT_FILE.flush();
+            int IsInsist = 0;
+            if(node.getIsInsistNode() == true)
+              IsInsist = 1;
+            REWARD_TEXT_FILE.print(node + ":Balance:" + node.getBalance() + ":MiningPower:" + node.getMiningPower() +
+                    ":InsistNode:" + IsInsist + ":NumConnection:" + node.getNumConnection() + '\n');
+            REWARD_TEXT_FILE.flush();
           } catch (Exception e) {
             e.printStackTrace();
           }
@@ -385,9 +390,9 @@ public class Main {
 
             for (Block b : blockList) {
                 if (!orphans.contains(b)) {
-                    pw.println("OnChain : " + b.getHeight() + " |Identity: " + b + "|PropagationTime: " + (b.propagationFinished - b.getTime()));
+                    pw.println("OnChain : " + b.getHeight() + " |Identity: " + b + " |BuildTime: " + b.getTime() + "|PropagationTime: " + (b.propagationFinished - b.getTime()));
                 } else {
-                    pw.println("Orphan : " + b.getHeight() + " |Identity: " + b + "|CompeteTime: " + (b.propagationFinished - b.getTime()));
+                    pw.println("Orphan : " + b.getHeight() + " |Identity: " + b + " |BuildTime: " + b.getTime() + "|CompeteTime: " + (b.propagationFinished - b.getTime()));
                 }
             }
             pw.close();
@@ -397,7 +402,7 @@ public class Main {
         }
 
         // Print propagation information about all blocks
-//           printAllPropagation(blockList, orphans);
+        printAllPropagation(blockList);
 
         long end = System.currentTimeMillis();
         long endStamp = getCurrentTime();
@@ -462,6 +467,8 @@ public class Main {
         resetTask();
         clearNode();//For multiEpoch
         SimulationEpoch ++;
+        System.out.println("RSTTime:"+RSTTime);
+
 
       }
     }
@@ -563,12 +570,15 @@ public class Main {
         // List of churn nodes.
         List<Boolean> churnNodes = makeRandomList(CHURN_NODE_RATE);
 
+      // List of churn nodes.
+      List<Boolean> insistNodes = makeRandomList(INSIST_NODE_RATE);
+
         for (int id = 1; id <= numNodes; id++) {
             // Each node gets assigned a region, its degree, mining power, routing table and
             // consensus algorithm
             Node node = new Node(
                     id, degreeList.get(id - 1) + 1, regionList.get(id - 1), genMiningPower(), TABLE,
-                    ALGO, useCBRNodes.get(id - 1), churnNodes.get(id - 1)
+                    ALGO, useCBRNodes.get(id - 1), churnNodes.get(id - 1),insistNodes.get(id - 1)
             );
             // Add the node to the list of simulated nodes
             addNode(node);
