@@ -17,10 +17,8 @@
 package simblock.node;
 
 import static simblock.settings.SimulationConfiguration.*;
-import static simblock.simulator.Main.GHOST_USE_MODE;
-import static simblock.simulator.Main.OUT_JSON_FILE;
-import static simblock.simulator.Main.RSTTime;
 
+import static simblock.simulator.Main.*;
 import static simblock.simulator.Network.getBandwidth;
 import static simblock.simulator.Network.getLatency;
 import static simblock.simulator.SimulateRandomEvent.processingTimeExtra;
@@ -158,6 +156,7 @@ public class Node {
     protected int spareLinks = 3;// 核心区块额外中继
     // RecRefuseTo Reconnect;
     public final  Map<Block, Map<Node,AbstractMessageTask>>ReConMap = new HashMap<>();
+    public final  Map<Block, Map<Node,AbstractMessageTask>>BusyConMap = new HashMap<>();
     //******************@Process Status@******************//
 
     //TODO
@@ -433,6 +432,8 @@ public class Node {
             }
             this.knownUncle.add(newBlock.getUncleB());
         }
+        arriveBlock(block, this);
+
     }
     /**
      * Adds a new block to the to chain. If node was minting that task instance is abandoned, and
@@ -451,6 +452,8 @@ public class Node {
         this.block = newBlock;
         printAddBlock(newBlock);
         // Observe and handle new block arrival
+        arriveBlock(block, this);
+
     }
 
     /**
@@ -740,6 +743,7 @@ public class Node {
         this.minting();
         // Advertise received block
         this.sendInv(block);
+
     }
     /**
      * Make Node Keep Insisting.
@@ -778,7 +782,6 @@ public class Node {
      * @param block the block
      */
     public void receiveBlock(Block block) {
-        arriveBlock(block, this);
         receivedBlock.add(block);
         // 合法块
         if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {
@@ -787,30 +790,8 @@ public class Node {
                 acceptBlock(block);
                 return;
             }
-            // GHOST
-            if(GHOST_USE_MODE){
-                if(this.block.getHeight() >= block.getHeight()) {// 旧区块不要(保护)
-                    addOrphans((GHOSTBlock)block,(GHOSTBlock)this.block);
-                    return;
-                }
-
-                if (!this.block.isOnSameChainAs(block)){// 不同链
-                    // 竞争策略
-                    if(this.isInsistNode){
-                        insistBlock((GHOSTBlock)block);// 竞争坚持
-                    }
-                    else {
-                        // If orphan mark orphan
-                        this.addOrphans((GHOSTBlock)this.block, (GHOSTBlock)block);
-                        acceptBlock((GHOSTBlock)block);// 最长链共识
-                    }
-                }
-                else{// 同链的新区块接受
-                    acceptBlock((GHOSTBlock)block);
-                }
-            }
             // Origin
-            else{
+            if(false == GHOST_USE_MODE){
                 if(this.block.getHeight() >= block.getHeight()) {// 旧区块不要(保护)
                     addOrphans(block,this.block);
                     return;
@@ -831,6 +812,31 @@ public class Node {
                     acceptBlock(block);
                 }
             }
+            // GHOST
+            else{
+                if(this.block.getHeight() >= block.getHeight()) {// 旧区块不要(保护)
+                    addOrphans((GHOSTBlock)block,(GHOSTBlock)this.block);
+                    return;
+                }
+
+                if (!this.block.isOnSameChainAs(block)){// 不同链
+                    // 竞争策略
+                    if(this.isInsistNode){
+                        insistBlock((GHOSTBlock)block);// 竞争坚持
+                    }
+                    else {
+                        // If orphan mark orphan
+                        this.addOrphans((GHOSTBlock)this.block, (GHOSTBlock)block);
+                        acceptBlock((GHOSTBlock)block);// 最长链共识
+                    }
+                }
+                else{// 同链的新区块接受
+                    acceptBlock((GHOSTBlock)block);
+                }
+            }
+
+
+            return;
         }
 
         // TODO 原版的代码存在冒险 下为原设计
@@ -856,8 +862,44 @@ public class Node {
             else{
                 this.addOrphans(block, this.block);
             }
-
+            arriveBlock(block, this);
+            return;
         }
+        receivedBlock.add(block);// 无效传输
+//        receivedBlock.add(block);// 重复传输
+//        if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {
+//            receivedBlock.add(block);
+//        }
+//        else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)){
+//            receivedBlock.add(block);
+//        }
+
+
+    }
+    public boolean putBusyConMap(Block block, AbstractMessageTask message, Node oppositeNode){
+        if(spareLinks <= 0){
+            return false;
+        }
+
+        if(this.BusyConMap.containsKey(block)){
+            this.BusyConMap.get(block).put(oppositeNode,message);// 排队重传
+        }
+        else {
+            Map<Node,AbstractMessageTask> collisionTable = new HashMap<>();
+            collisionTable.put(oppositeNode,message);
+            this.BusyConMap.put(block, collisionTable);// 排队重传
+        }
+        return true;
+    };// 排队重传
+    public void DeBusyConMap(Block block, Node oppositeNode){
+    // 再次发送时去除BusyConMap
+        if(this.BusyConMap.containsKey(block)){
+            this.BusyConMap.get(block).remove(oppositeNode);// 排队重传
+        }
+        else {
+            System.out.println("Where is my Map?");
+        }
+
     }
     public boolean putReConMap(Block block, AbstractMessageTask message, Node oppositeNode){
         if(spareLinks <= 0){
@@ -888,6 +930,12 @@ public class Node {
             }
             this.ReConMap.remove(block);
         }
+        else{
+            if(this.block == block){
+                return;// TODO 不同端口重复传输
+            }
+            return;
+        }
     }
     /**
      * Receive message.
@@ -897,29 +945,9 @@ public class Node {
     public void receiveMessage(AbstractMessageTask message) {
         Node from = message.getFrom();
 
-        if (message instanceof InvMessageTask) {// 接收节点
+        if (message instanceof InvMessageTask) {// 接收节点收到新区块通知
             Block block = ((InvMessageTask) message).getBlock();
-            if(receivedBlock.contains(block)&&downloadingBlocks.contains(block)){
-                // 区块连接可以重新路由
-                if(ReConMap.containsKey(block)&&spareLinks>0) {//接收繁忙
-                    // 新路由可以中继
-                    /*TODO BlockMessage Should been Splited*/
-                    // this.interval = getLatency(this.getFrom().getRegion(), this.getTo().getRegion()) + delay;
-                    AbstractMessageTask task = new RecMessageTask(this, from, block);
-                    if(putReConMap(block, task, from)){
-                        spareLinks --;
-                        putTask(task);
-                    };// 排队重传
-                }
-                else{//冗余接受 海王
-                    AbstractMessageTask task = new RecMessageTask(this, from, block);
-                    if(putReConMap(block, task, from)){
-                        spareLinks --;
-                        putTask(task);
-                    };// 排队重传
-                }
-            }
-            else {
+            if(false == (receivedBlock.contains(block)&&downloadingBlocks.contains(block))){
                 receivedBlock.add(block);
                 if (!this.orphans.contains(block) && !this.downloadingBlocks.contains(block)) {// 孤块里没有区块且没在下载 则开始下载
                     if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {// 合法块
@@ -935,13 +963,37 @@ public class Node {
                     }
                 }
             }
+            else {
+                // 区块连接可以重新路由
+                if(ReConMap.containsKey(block)&&spareLinks>0) {//接收繁忙
+                    // 新路由可以中继
+                    /*TODO BlockMessage Should been Splited*/
+                    // this.interval = getLatency(this.getFrom().getRegion(), this.getTo().getRegion()) + delay;
+                    AbstractMessageTask task = new RecMessageTask(this, from, block);
+                    if(putReConMap(block, task, from)){
+                        spareLinks --;
+                        putTask(task);
+                    };// 排队重传
+                }
+                else{//冗余接受 海王
+                    AbstractMessageTask task = new RecMessageTask(this, from, block);
+                    if(putReConMap(block, task, from)){
+                        SpareLinkTimes ++;
+                        spareLinks --;
+                        putTask(task);
+                    };// 排队重传
+                }
+                if(this.block == block){
+                    System.out.println("Should Not Be More Link");
+                }
+            }
         }
 
         if (message instanceof RecMessageTask) {// 发送节点收到获取区块请求
             this.messageQue.add((RecMessageTask) message);
             Block block = ((RecMessageTask) message).getBlock();
             if (true == sendingBlock) {
-                putReConMap(block, message, message.getFrom());// 排队重传
+                putBusyConMap(block, message, message.getFrom());// 排队重传
                 AbstractMessageTask task = new BusyMessageTask(this, from,(RecMessageTask)message);
                 putTask(task);
             }
@@ -950,6 +1002,7 @@ public class Node {
             }
         }
         if (message instanceof BusyMessageTask) {// 接受节点服务繁忙通知
+            BusyTimes ++;
             RecMessageTask busyMessage = ((BusyMessageTask) message).getMessage();
             Block block = busyMessage.getBlock();
             spareLinks ++;
@@ -991,6 +1044,13 @@ public class Node {
 
         if (message instanceof BlockMessageTask) {// 接收节点收到区块
             Block block = ((BlockMessageTask) message).getBlock();
+            if(this.block == block){
+                if(this.ReConMap.containsKey(block)){
+                    System.out.println("Should Not Be");
+                }
+                DelaySuccessRelayDenyTimes ++ ;
+            }
+            // ReConMapShouldBeSplited
             RSTAllConnection(block, message.getFrom());
             downloadingBlocks.remove(block);
             this.receiveBlock(block);
@@ -998,17 +1058,17 @@ public class Node {
 
         if (message instanceof RSTMessageTask) {// 发送节点收到拒绝区块
             Block block = ((RSTMessageTask) message).getBlock();
-            RSTTime += 1;
-            if(false == this.ReConMap.containsKey(block)){
+            RSTTimes += 1;
+            if(false == this.BusyConMap.containsKey(block)){
                 // Interupt block
                 interuptBlock();
-            }else if(true == this.ReConMap.containsKey(block)) {
+            }else if(true == this.BusyConMap.containsKey(block)) {
 
                 Node raiseRstNode = ((RSTMessageTask) message).getFrom();
-                AbstractMessageTask cancelMessageTask = this.ReConMap.get(block).get(raiseRstNode);
+                AbstractMessageTask cancelMessageTask = this.BusyConMap.get(block).get(raiseRstNode);
                 // DeMap
-                this.ReConMap.get(block).remove(raiseRstNode);
-                if(this.ReConMap.get(block).isEmpty())this.ReConMap.remove(block);
+                this.BusyConMap.get(block).remove(raiseRstNode);
+                if(this.BusyConMap.get(block).isEmpty())this.BusyConMap.remove(block);
                 // DeQue
                 if(this.messageQue.contains(cancelMessageTask)){
                     // Disconnect

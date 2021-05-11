@@ -67,6 +67,7 @@ public class BlockMessageTask extends AbstractMessageTask {
   public void run() {
 
     this.getFrom().sendNextBlockMessage();
+    this.getFrom().DeBusyConMap(this.block,getTo());
     this.block.propagationFinished = getCurrentTime();
     if(PRINTOUT) {
       OUT_JSON_FILE.print("{");

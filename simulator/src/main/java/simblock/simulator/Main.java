@@ -48,7 +48,12 @@ public class Main {
      */
     public static long simulationTime = 0;
 
-    public static long RSTTime = 0;
+
+    public static long RSTTimes = 0;//RSTTimes = BusyTimes + SpareLinkTimes
+    public static long BusyTimes = 0;
+    public static long SpareLinkTimes = 0;
+
+    public static long DelaySuccessRelayDenyTimes = 0;
 
 
     /**
@@ -63,11 +68,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 7;
+    public static final long TotalSimulationEpoch = 10;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 7;
+    public static long SimulationEpoch = 10;
     /**
      * Path to config file.
      */
@@ -361,7 +366,10 @@ public class Main {
             }
         }
         for (Node node : getSimulatedNodes()) {
-          try {
+            if(node.getBlock().getHeight()<(END_BLOCK_HEIGHT-1))
+                System.out.println("\"getHeight\":" + node.getBlock().getHeight());
+
+            try {
             int IsInsist = 0;
             if(node.getIsInsistNode() == true)
               IsInsist = 1;
@@ -467,7 +475,11 @@ public class Main {
         resetTask();
         clearNode();//For multiEpoch
         SimulationEpoch ++;
-        System.out.println("RSTTime:"+RSTTime);
+        System.out.println("RSTTime:"+RSTTimes);
+        System.out.println("BusyTimes:"+BusyTimes);
+        System.out.println("SpareLinkTimes:"+SpareLinkTimes);
+        System.out.println("DelaySuccessRelayDenyTimes:"+DelaySuccessRelayDenyTimes);
+
 
 
       }

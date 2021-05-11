@@ -194,9 +194,9 @@ public class NetworkConfiguration {
    * The cumulative distribution of number of outbound links. Cf. Andrew Miller et al.,
    * "Discovering bitcoin's public topology and influential nodes", 2015.
    */
-  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM;
-  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM";
-//  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_BITCOIN_2015;
-//  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_BITCOIN_2015";
+//  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM;
+//  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM";
+  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_BITCOIN_2015;
+  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_BITCOIN_2015";
 
 }
