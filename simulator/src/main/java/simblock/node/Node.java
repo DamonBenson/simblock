@@ -35,6 +35,8 @@ import simblock.node.routing.AbstractRoutingTable;
 import simblock.simulator.Timer;
 import simblock.task.*;
 
+import javax.swing.*;
+
 /**
  * A class representing a node in the network.
  */
@@ -838,18 +840,6 @@ public class Node {
 
             return;
         }
-
-        // TODO 原版的代码存在冒险 下为原设计
-        //      if (this.block != null && !this.block.isOnSameChainAs(block)) {//不同链 标记孤块 接受区块
-        //        // If orphan mark orphan
-        //        this.addOrphans(this.block, block);
-        //      }
-        //      // Else add to canonical chain
-        //      this.addToChain(block);
-        //      // Generates a new minting task
-        //      this.minting();
-        //      // Advertise received block
-        //      this.sendInv(block);
         // 如果难度不够变成孤块  注册未登记的孤块
         else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)) {
 
@@ -865,23 +855,14 @@ public class Node {
             arriveBlock(block, this);
             return;
         }
-        receivedBlock.add(block);// 无效传输
-//        receivedBlock.add(block);// 重复传输
-//        if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {
-//            receivedBlock.add(block);
-//        }
-//        else if (!this.orphans.contains(block) && !block.isOnSameChainAs(this.block)){
-//            receivedBlock.add(block);
-//        }
-
-
+        receivedBlock.add(block);// 无效传输 重复传输
     }
     public boolean putBusyConMap(Block block, AbstractMessageTask message, Node oppositeNode){
         if(spareLinks <= 0){
             return false;
         }
 
-        if(this.BusyConMap.containsKey(block)){
+        if(this.BusyConMap.containsKey(block)){//
             this.BusyConMap.get(block).put(oppositeNode,message);// 排队重传
         }
         else {
@@ -893,7 +874,7 @@ public class Node {
     };// 排队重传
     public void DeBusyConMap(Block block, Node oppositeNode){
     // 再次发送时去除BusyConMap
-        if(false == this.BusyConMap.containsKey(block)){
+        if(false == this.BusyConMap.containsKey(block)){//
             // System.out.println("Where is my Map?");
             return;
         }else if(true == this.BusyConMap.containsKey(block)) {
@@ -920,7 +901,7 @@ public class Node {
     }
     public void RSTAllConnection(Block block, Node offerNode){
         if(ReConMap.containsKey(block)){
-            this.ReConMap.get(block).remove(offerNode);
+            this.ReConMap.get(block).remove(offerNode);// 正常传输不需要终止
 //            if(this.ReConMap.get(block).size()>50){
 //                System.out.println("Size:" + this.ReConMap.get(block).size());
 //            }
@@ -1064,10 +1045,12 @@ public class Node {
                 }
                 DelaySuccessRelayDenyTimes ++ ;
             }
-            // ReConMapShouldBeSplited
-            RSTAllConnection(block, message.getFrom());
-            downloadingBlocks.remove(block);
-            this.receiveBlock(block);
+            else{
+                // ReConMapShouldBeSplited
+                RSTAllConnection(block, message.getFrom());
+                downloadingBlocks.remove(block);
+                this.receiveBlock(block);
+            }
         }
 
         if (message instanceof RSTMessageTask) {// 发送节点收到拒绝区块
@@ -1075,9 +1058,8 @@ public class Node {
             RSTTimes += 1;
             if(false == this.BusyConMap.containsKey(block)){
                 // Interupt block
-                interuptBlock();
+                interuptBlock(null);
             }else if(true == this.BusyConMap.containsKey(block)) {
-
                 Node raiseRstNode = ((RSTMessageTask) message).getFrom();
                 AbstractMessageTask cancelMessageTask = this.BusyConMap.get(block).get(raiseRstNode);
                 // DeMap
@@ -1088,7 +1070,7 @@ public class Node {
                     this.messageQue.remove(cancelMessageTask);
                 } else{
                     // Interupt block
-                    interuptBlock();
+                    interuptBlock(cancelMessageTask);
                 }
             }
 
@@ -1152,24 +1134,32 @@ public class Node {
             sendingBlock = true;
             sendingTask = messageTask;
             putTask(messageTask);
+            // 除非是交易请求否则不DeMap
             if(false == (this.messageQue.get(0) instanceof GetBlockTxnMessageTask)){
                 DeBusyConMap(((RecMessageTask) this.messageQue.get(0)).getBlock(),
-                        ((RecMessageTask) this.messageQue.get(0)).getFrom());
+                                ((RecMessageTask) this.messageQue.get(0)).getFrom());
             }
+
             this.messageQue.remove(0);
         } else {
             sendingTask = null;
             sendingBlock = false;
         }
     }
-    public void interuptBlock(){
-        removeTask(sendingTask);
-        sendingTask = null;
-        if(!this.messageQue.isEmpty()){
-            this.sendNextBlockMessage();
-        } else {
-            sendingBlock = false;
+    public void interuptBlock(AbstractMessageTask cancelTask){
+        if(sendingTask == cancelTask){
+            removeTask(sendingTask);
+            sendingTask = null;
+            if(!this.messageQue.isEmpty()){
+                this.sendNextBlockMessage();
+            } else {
+                sendingBlock = false;
+            }
         }
+        else if(cancelTask == null){// Deny Task,nothing to do as you can see.What about count How many waste tra
+            return;
+        }
+
     }
 
 }

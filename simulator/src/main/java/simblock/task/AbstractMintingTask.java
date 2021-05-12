@@ -20,6 +20,8 @@ import simblock.block.Block;
 import simblock.block.ProofOfWorkBlock;
 import simblock.node.Node;
 
+import static simblock.simulator.Main.BLOCK_TEXT_FILE;
+import static simblock.simulator.Main.OUT_JSON_FILE;
 import static simblock.simulator.Timer.getCurrentTime;
 
 /**
@@ -76,6 +78,9 @@ public abstract class AbstractMintingTask implements Task {
   }
 
   public void run() {
+    BLOCK_TEXT_FILE.println("interval:" + interval +
+                              ":minter:" + minter.getNodeID() + ":Height:" + (parent.getHeight()+1));
+    BLOCK_TEXT_FILE.flush();
 
   }
 }
