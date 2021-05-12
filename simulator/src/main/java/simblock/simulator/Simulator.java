@@ -153,7 +153,6 @@ public class Simulator {
 
       // Update information for the new block
       propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
-
 //      if(propagation.get(node.getNodeID())>5000){
 //        System.out.println(propagation.get(node.getNodeID()));
 //      }
@@ -164,8 +163,12 @@ public class Simulator {
         // After the observed blocks limit is reached, log and remove old blocks by FIFO principle
         // Now there is no limit
         // 孤块或者广播完成的块才打印
-        if(observedPropagations.get(0).size()==NUM_OF_NODES || observedBlocks.get(0).getHeight() < (block.getHeight()-5)){
+        if(observedPropagations.get(0).size()==NUM_OF_NODES ){
           printPropagation(observedBlocks.get(0), observedPropagations.get(0));
+          observedBlocks.remove(0);
+          observedPropagations.remove(0);
+        }
+        else if(observedBlocks.get(0).getHeight() < (block.getHeight()-5)){
           observedBlocks.remove(0);
           observedPropagations.remove(0);
         }
@@ -176,7 +179,6 @@ public class Simulator {
       // propagation   (节点ID，该节点收到该区块的时间：区别于接受区块)
       // propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
       propagation.put(node.getNodeID(), getCurrentTime() - block.getTime());
-
       // Record the block as seen
       observedBlocks.add(block);
       // Record the propagation time

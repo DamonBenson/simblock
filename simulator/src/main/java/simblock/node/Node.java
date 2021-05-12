@@ -893,13 +893,15 @@ public class Node {
     };// 排队重传
     public void DeBusyConMap(Block block, Node oppositeNode){
     // 再次发送时去除BusyConMap
-        if(this.BusyConMap.containsKey(block)){
-            this.BusyConMap.get(block).remove(oppositeNode);// 排队重传
+        if(false == this.BusyConMap.containsKey(block)){
+            // System.out.println("Where is my Map?");
+            return;
+        }else if(true == this.BusyConMap.containsKey(block)) {
+            if(this.BusyConMap.containsKey(block)){
+                this.BusyConMap.get(block).remove(oppositeNode);// 排队重传
+            }
+            if(this.BusyConMap.get(block).isEmpty())this.BusyConMap.remove(block);
         }
-        else {
-            System.out.println("Where is my Map?");
-        }
-
     }
     public boolean putReConMap(Block block, AbstractMessageTask message, Node oppositeNode){
         if(spareLinks <= 0){
@@ -919,9 +921,9 @@ public class Node {
     public void RSTAllConnection(Block block, Node offerNode){
         if(ReConMap.containsKey(block)){
             this.ReConMap.get(block).remove(offerNode);
-            if(this.ReConMap.get(block).size()>5){
-                System.out.println("Size:" + this.ReConMap.get(block).size());
-            }
+//            if(this.ReConMap.get(block).size()>50){
+//                System.out.println("Size:" + this.ReConMap.get(block).size());
+//            }
             // 传输完毕，放弃备胎
             for (Node RstNode:this.ReConMap.get(block).keySet()){
                 // RST
@@ -937,17 +939,23 @@ public class Node {
             return;
         }
     }
-    /**
-     * Receive message.
-     *
-     * @param message the message
-     */
+//    public void BusyRST(Block block, Node offerNode) {
+//
+//    }
+
+        /**
+         * Receive message.
+         *
+         * @param message the message
+         */
     public void receiveMessage(AbstractMessageTask message) {
         Node from = message.getFrom();
-
+        if(this.downloadingBlocks.size()>3){
+            System.out.println(from + "Should Not Be More Link" + this);
+        }
         if (message instanceof InvMessageTask) {// 接收节点收到新区块通知
             Block block = ((InvMessageTask) message).getBlock();
-            if(false == (receivedBlock.contains(block)&&downloadingBlocks.contains(block))){
+            if(false == (receivedBlock.contains(block))){
                 receivedBlock.add(block);
                 if (!this.orphans.contains(block) && !this.downloadingBlocks.contains(block)) {// 孤块里没有区块且没在下载 则开始下载
                     if (this.consensusAlgo.isReceivedBlockValid(block, this.block)) {// 合法块
@@ -963,7 +971,7 @@ public class Node {
                     }
                 }
             }
-            else {
+            else if(downloadingBlocks.contains(block)){
                 // 区块连接可以重新路由
                 if(ReConMap.containsKey(block)&&spareLinks>0) {//接收繁忙
                     // 新路由可以中继
@@ -987,6 +995,10 @@ public class Node {
                     System.out.println("Should Not Be More Link");
                 }
             }
+//            else{
+//                if ((block != this.block)&&(false==this.orphans.contains(block)))
+//                    System.out.println("Should Not Be ?");
+//            }
         }
 
         if (message instanceof RecMessageTask) {// 发送节点收到获取区块请求
@@ -1003,13 +1015,19 @@ public class Node {
         }
         if (message instanceof BusyMessageTask) {// 接受节点服务繁忙通知
             BusyTimes ++;
+            spareLinks ++;
             RecMessageTask busyMessage = ((BusyMessageTask) message).getMessage();
             Block block = busyMessage.getBlock();
-            spareLinks ++;
-            if (true == downloadingBlocks.contains(block)){
+            if (true == downloadingBlocks.contains(block)){// 排队重连
                 if(false == putReConMap(block, busyMessage, from)){
                     System.out.println("There should not be can't");
-                };// 排队重传
+                };
+            }
+            else{// 不需要下载RST连接
+                // RST
+                // AbstractMessageTask task = new RSTMessageTask(this, RstNode, block);
+                // putTask(task);
+                return;
             }
         }
 
@@ -1018,13 +1036,6 @@ public class Node {
             if (false == sendingBlock) {
                 this.sendNextBlockMessage();
             }
-
-//            if (true == sendingBlock) {
-//                putReConMap(block, message, message.getFrom());// 排队重传
-//            }
-//            else{
-//                this.sendNextBlockMessage();
-//            }
         }
 
         if (message instanceof CmpctBlockMessageTask){// 接收节点
@@ -1033,6 +1044,9 @@ public class Node {
             float CBRfailureRate = this.isChurnNode ? CBR_FAILURE_RATE_FOR_CHURN_NODE : CBR_FAILURE_RATE_FOR_CONTROL_NODE;
             boolean success = random.nextDouble() > CBRfailureRate ? true : false;
             if(success){
+                if(this.block == block){
+                    DelaySuccessRelayDenyTimes ++ ;
+                }
                 RSTAllConnection(block, message.getFrom());
                 downloadingBlocks.remove(block);
                 this.receiveBlock(block);
@@ -1046,7 +1060,7 @@ public class Node {
             Block block = ((BlockMessageTask) message).getBlock();
             if(this.block == block){
                 if(this.ReConMap.containsKey(block)){
-                    System.out.println("Should Not Be");
+                    System.out.println("Should Not Be");// TODO Should BE
                 }
                 DelaySuccessRelayDenyTimes ++ ;
             }
@@ -1067,8 +1081,7 @@ public class Node {
                 Node raiseRstNode = ((RSTMessageTask) message).getFrom();
                 AbstractMessageTask cancelMessageTask = this.BusyConMap.get(block).get(raiseRstNode);
                 // DeMap
-                this.BusyConMap.get(block).remove(raiseRstNode);
-                if(this.BusyConMap.get(block).isEmpty())this.BusyConMap.remove(block);
+                DeBusyConMap(block,raiseRstNode);
                 // DeQue
                 if(this.messageQue.contains(cancelMessageTask)){
                     // Disconnect
@@ -1077,7 +1090,6 @@ public class Node {
                     // Interupt block
                     interuptBlock();
                 }
-
             }
 
 
@@ -1111,7 +1123,6 @@ public class Node {
         if (this.messageQue.size() > 0) {
             Node to = this.messageQue.get(0).getFrom();
             long bandwidth = getBandwidth(this.getRegion(), to.getRegion());
-
             AbstractMessageTask messageTask;
 
             if(this.messageQue.get(0) instanceof RecMessageTask){
@@ -1140,8 +1151,12 @@ public class Node {
 
             sendingBlock = true;
             sendingTask = messageTask;
-            this.messageQue.remove(0);
             putTask(messageTask);
+            if(false == (this.messageQue.get(0) instanceof GetBlockTxnMessageTask)){
+                DeBusyConMap(((RecMessageTask) this.messageQue.get(0)).getBlock(),
+                        ((RecMessageTask) this.messageQue.get(0)).getFrom());
+            }
+            this.messageQue.remove(0);
         } else {
             sendingTask = null;
             sendingBlock = false;

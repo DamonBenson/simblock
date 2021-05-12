@@ -32,7 +32,7 @@ public class SimulationConfiguration {
   public static final boolean PRINTOUT = false;
   public static final boolean PRINTADDBLOCK = false;
   public static final boolean PRINTGRAPH = false;
-  public static final boolean ANALYSEWHOLEPROPAGATION = true;//false as default,case not ROM memory needed
+  public static final boolean ANALYSEWHOLEPROPAGATION = false;//false as default,case not ROM memory needed
   public static final boolean VERBOSE = true;//false as default,case not chaos
   public static final boolean QUIET = false;//true as default,case not chaos  well， it can‘t silent all
   public static final boolean MEMORYSAVEMODE = true;
@@ -58,7 +58,7 @@ public class SimulationConfiguration {
    */
   //TODO revert
   //public static final int END_BLOCK_HEIGHT = 100;
-  public static final int END_BLOCK_HEIGHT = 10;//00;
+  public static final int END_BLOCK_HEIGHT = 10000;//00;
   //10k 10000
   /**
    * The kind of routing table.

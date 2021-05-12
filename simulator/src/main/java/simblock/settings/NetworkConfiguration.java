@@ -172,6 +172,18 @@ public class NetworkConfiguration {
           0.930,          0.940,          0.950,          0.960,          0.970,
           0.975,          0.980,          0.985,          0.990,          0.995,          1.000
   };
+  /**
+   * The cumulative distribution of number of outbound links for ethereum.
+   */
+  private static final double[] DEGREE_DISTRIBUTION_ETHEREUM_LOW = {
+          0.005,          0.010,          0.015,          0.020,          0.025,
+          0.035,          0.045,          0.055,          0.070,          0.085,
+          0.100,          0.120,          0.140,          0.160,          0.190,
+          0.220,          0.260,          0.260,          0.310,          0.310,
+          0.370,          0.440,          0.520,          0.620,          0.710,
+          0.790,          0.860,          0.960,          0.970,          0.980,
+          0.990,          0.995,          1.000
+ };
 
   /**
    * The cumulative distribution of number of outbound links for Litecoin.
@@ -196,7 +208,9 @@ public class NetworkConfiguration {
    */
 //  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM;
 //  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_ETHEREUM_CUSTOM";
-  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_BITCOIN_2015;
-  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_BITCOIN_2015";
+//  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_BITCOIN_2015;
+//  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_BITCOIN_2015";
+  public static final double[] DEGREE_DISTRIBUTION = DEGREE_DISTRIBUTION_ETHEREUM_LOW;
+  public static final String DEGREE_DISTRIBUTION_NAME = "DEGREE_DISTRIBUTION_ETHEREUM_LOW";
 
 }

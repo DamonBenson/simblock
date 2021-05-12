@@ -48,5 +48,6 @@ public class PoWMiningTask extends AbstractMintingTask {
         this.difficulty
     );
     this.getMinter().receiveBlock(createdBlock);
+    super.run();
   }
 }

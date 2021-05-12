@@ -68,11 +68,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 10;
+    public static final long TotalSimulationEpoch = 1;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 10;
+    public static long SimulationEpoch = 1;
     /**
      * Path to config file.
      */
@@ -116,11 +116,17 @@ public class Main {
     //TODO use logger
     public static PrintWriter PROPAGATION_TEXT_FILE;
 
-  /**
-   * The constant REWARD_TEXT_FILE.
-   */
-  //TODO use logger
-  public static PrintWriter REWARD_TEXT_FILE;
+    /**
+    * The constant REWARD_TEXT_FILE.
+    */
+    //TODO use logger
+    public static PrintWriter REWARD_TEXT_FILE;
+
+    /**
+     * The constant REWARD_TEXT_FILE.
+     */
+    //TODO use logger
+    public static PrintWriter BLOCK_TEXT_FILE;
 
     /**
      * How much is The unclePayment.
@@ -159,6 +165,9 @@ public class Main {
                     new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./custom%d.txt",SimulationEpoch))))));
             PROPAGATION_TEXT_FILE = new PrintWriter(
                     new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./propagation%d.txt",SimulationEpoch))))));
+            BLOCK_TEXT_FILE = new PrintWriter(
+                    new BufferedWriter(new FileWriter(new File(OUT_FILE_URI.resolve(String.format("./block%d.txt",SimulationEpoch))))));
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -179,35 +188,43 @@ public class Main {
         int currentBlockHeight = 1;
         boolean IsMaxChain = false;
 
-        // Iterate over tasks and handle
-        while (getTask() != null) {
-            if (getTask() instanceof AbstractMintingTask) {
-                AbstractMintingTask task = (AbstractMintingTask) getTask();
-                if (task.getParent().getHeight() == currentBlockHeight) {
-                    currentBlockHeight++;
-                }
-                if (currentBlockHeight > END_BLOCK_HEIGHT) {
-                    break;
-                }
-                // |Log| every 100 OnChainBlock and at the second block
-                // TODO use constants here
-                if (QUIET){
-                    continue;
-                }
-                IsMaxChain = ((task.getParent().getHeight() + 1) == currentBlockHeight);
-                if (VERBOSE){
-                    System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
-                }
-                else {
-                    if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
-                        writeGraph(currentBlockHeight);
-                        System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
+        // Iterate over tasks and handler
+        try {
+            while (getTask() != null) {
+                if (getTask() instanceof AbstractMintingTask) {
+                    AbstractMintingTask task = (AbstractMintingTask) getTask();
+                    if (task.getParent().getHeight() == currentBlockHeight) {
+                        currentBlockHeight++;
                     }
-                }
+                    if (currentBlockHeight % 1000 == 0) {
+                        System.out.println("currentBlockHeight:" + currentBlockHeight);
+                    }
+                    if (currentBlockHeight > END_BLOCK_HEIGHT) {
+                        break;
+                    }
+                    // |Log| every 100 OnChainBlock and at the second block
+                    // TODO use constants here
+                    if (QUIET) {
+                        continue;
+                    }
+                    IsMaxChain = ((task.getParent().getHeight() + 1) == currentBlockHeight);
+                    if (VERBOSE) {
+                        System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
+                    } else {
+                        if (currentBlockHeight % 100 == 0 || currentBlockHeight == 2) {
+                            writeGraph(currentBlockHeight);
+                            System.out.println(IsMaxChain + "\tNowHeight:" + (task.getParent().getHeight() + 1) + "\tcurrentBlockHeight:" + currentBlockHeight + "\tParentBlock:" + task.getParent().getId());
+                        }
+                    }
 
+                }
+                // Execute task
+                runTask();
             }
-            // Execute task
-            runTask();
+        }
+        catch (OutOfMemoryError e) {// 内存不足
+            System.out.println("OutOfMemoryError...");
+            e.printStackTrace();
         }
 
         //TODO logger
@@ -455,7 +472,8 @@ public class Main {
         CUSTOM_TEXT_FILE.println("]");
         CUSTOM_TEXT_FILE.close();
         PROPAGATION_TEXT_FILE.close();
-        // end json format
+        BLOCK_TEXT_FILE.close();
+          // end json format
         // Log simulation time in milliseconds
         System.out.println(simulationTime);
         System.out.println("\"averageOrphansSize\":" + averageOrphansSize);
@@ -479,7 +497,6 @@ public class Main {
         System.out.println("BusyTimes:"+BusyTimes);
         System.out.println("SpareLinkTimes:"+SpareLinkTimes);
         System.out.println("DelaySuccessRelayDenyTimes:"+DelaySuccessRelayDenyTimes);
-
 
 
       }

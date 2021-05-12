@@ -54,6 +54,6 @@ public class EthMiningTask extends AbstractMintingTask {
         this.difficulty, this.uncleA, this.uncleB
     );
     this.getMinter().receiveBlock(createdBlock);
-
+    super.run();
   }
 }

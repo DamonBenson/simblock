@@ -17,7 +17,10 @@
 package simblock.task;
 
 import simblock.block.Block;
+import simblock.block.ProofOfWorkBlock;
 import simblock.node.Node;
+
+import static simblock.simulator.Timer.getCurrentTime;
 
 /**
  * The type Abstract minting task represents .
@@ -70,5 +73,9 @@ public abstract class AbstractMintingTask implements Task {
   @Override
   public long getInterval() {
     return this.interval;
+  }
+
+  public void run() {
+
   }
 }

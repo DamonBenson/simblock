@@ -8,6 +8,7 @@ import simblock.task.EthMiningTask;
 
 import java.math.BigInteger;
 
+import static simblock.settings.SimulationConfiguration.INTERVAL;
 import static simblock.simulator.Main.random;
 /**
  * The type Proof of work In Eth.
@@ -34,8 +35,12 @@ public class ProofOfWorkEth extends AbstractConsensusAlgo {
         BigInteger difficulty = parent.getNextDifficulty();
         double p = 1.0 / difficulty.doubleValue();
         double u = random.nextDouble();
-        return p <= Math.pow(2, -53) ? null : new EthMiningTask((Node) selfNode, (long) (Math.log(u) / Math.log(
-                1.0 - p) / selfNode.getMiningPower()), difficulty, selfNode.generateUncleA(), selfNode.generateUncleB());
+        long interval = (long) (Math.log(u) / Math.log(
+                1.0 - p) / selfNode.getMiningPower());
+        if(interval< INTERVAL){
+            System.out.println(interval);
+        }
+        return p <= Math.pow(2, -53) ? null : new EthMiningTask(selfNode, interval, difficulty, selfNode.generateUncleA(), selfNode.generateUncleB());
     }
 
     /**
