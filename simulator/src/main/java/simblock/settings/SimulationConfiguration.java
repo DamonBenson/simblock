@@ -80,8 +80,8 @@ public class SimulationConfiguration {
    */
   // TODO not documented in markdown
   // TODO return to PoW
-  public static final String ALGO = "simblock.node.consensus.ProofOfWork";
-//  public static final String ALGO = "simblock.node.consensus.ProofOfWorkEth";
+//  public static final String ALGO = "simblock.node.consensus.ProofOfWork";
+  public static final String ALGO = "simblock.node.consensus.ProofOfWorkEth";
 //  "simblock.node.consensus.ProofOfWork","simblock.node.consensus.ProofOfWorkEth"
   /**
    * The usage rate of compact block relay (CBR) protocol.

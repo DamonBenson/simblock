@@ -68,11 +68,11 @@ public class Main {
     /**
      * The initial simulation time.
      */
-    public static final long TotalSimulationEpoch = 1;
+    public static final long TotalSimulationEpoch = 3;
     /**
      * The initial simulation time.
      */
-    public static long SimulationEpoch = 1;
+    public static long SimulationEpoch = 3;
     /**
      * Path to config file.
      */
@@ -196,7 +196,7 @@ public class Main {
                     if (task.getParent().getHeight() == currentBlockHeight) {
                         currentBlockHeight++;
                     }
-                    if (currentBlockHeight % 1000 == 0) {
+                    if (currentBlockHeight % 3000 == 0) {
                         System.out.println("currentBlockHeight:" + currentBlockHeight);
                     }
                     if (currentBlockHeight > END_BLOCK_HEIGHT) {
@@ -222,7 +222,11 @@ public class Main {
                 runTask();
             }
         }
-        catch (OutOfMemoryError e) {// 内存不足
+        catch (java.lang.OutOfMemoryError e) {// 内存不足
+            System.out.println("OutOfMemoryError...");
+            e.printStackTrace();
+        }
+        catch ( OutOfMemoryError e) {// 内存不足
             System.out.println("OutOfMemoryError...");
             e.printStackTrace();
         }
